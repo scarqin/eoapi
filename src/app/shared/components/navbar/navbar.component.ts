@@ -8,6 +8,7 @@ import { ElectronService } from '../../../core/services';
 })
 export class NavbarComponent implements OnInit {
   isMaximized = false;
+  moduleType = 'default';
   isElectron: boolean = true;
   OS_TYPE = navigator.platform.toLowerCase();
   constructor(private electron: ElectronService) {

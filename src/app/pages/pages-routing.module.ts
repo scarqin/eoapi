@@ -2,6 +2,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { NgModule } from '@angular/core';
 
 import { PagesComponent } from './pages.component';
+import { ExtensionComponent } from './extension/extension.component';
 
 const routes: Routes = [
   {
@@ -12,6 +13,10 @@ const routes: Routes = [
         path: '',
         redirectTo: 'api',
         pathMatch: 'full',
+      },
+      {
+        path: 'extension',
+        component: ExtensionComponent,
       },
       {
         path: 'api',

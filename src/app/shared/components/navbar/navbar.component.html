@@ -1,5 +1,9 @@
 <div class="eo_navbar f_row f_js_ac">
   <img class="logo" src="assets/images/logo.svg" />
+  <nz-radio-group class="can_be_click" [(ngModel)]="moduleType">
+    <label nz-radio-button  [routerLink]="['/home/extension']" routerLinkActive="ant-radio-button-wrapper-checked" nzValue="extension"><span>Extension Module</span></label>
+    <label nz-radio-button [routerLink]="['/home/api/test']" nzValue="default"><span>Core Module</span></label>
+  </nz-radio-group>
   <div class="can_be_click f_row_ac right_btn_container">
     <span class="help mr10" nz-dropdown [nzDropdownMenu]="menu">
       <i nz-icon nzType="question-circle" nzTheme="outline"></i>

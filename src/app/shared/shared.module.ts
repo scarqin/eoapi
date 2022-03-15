@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import {RouterModule} from '@angular/router';
 
 import {
   PageNotFoundComponent,
@@ -35,6 +36,7 @@ const COMPONENTS = [PageNotFoundComponent, ToolbarComponent, SelectThemeComponen
     NzToolTipModule,
     NzResultModule,
     NzDropDownModule,
+    RouterModule
   ],
   declarations: [WebviewDirective, ...COMPONENTS, ApiParamsNumPipe],
   providers: [ModalService],
