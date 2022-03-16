@@ -30,14 +30,14 @@
               "src/assets",
               {
                 "glob": "**/*",
-                "input": "sidebar-extension",
-                "ignore": ["**/node_modules/**","sidebar-extension/**/static"],
-                "output": "/sidebar-extension/"
+                "input": "extension",
+                "ignore": ["**/node_modules/**","extension/**/static"],
+                "output": "/extension/"
               },
               {
                 "glob": "**/*",
-                "input": "sidebar-extension/**/static",
-                "output": "/sidebar-extension/static/"
+                "input": "extension/**/static",
+                "output": "/static/"
               },
               {
                 "glob": "**/*",
