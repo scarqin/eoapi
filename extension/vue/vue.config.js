@@ -16,6 +16,7 @@ module.exports = {
    * Detail: https://cli.vuejs.org/config/#publicpath
    */
   outputDir: 'dist',
+  publicPath:process.env.NODE_ENV === 'production'?'':'/',
   assetsDir: 'static',
   filenameHashing: true,
   // tweak internal webpack configuration.
@@ -33,6 +34,7 @@ module.exports = {
       'Access-Control-Allow-Origin': '*',
     },
   },
+
   // 自定义webpack配置
   configureWebpack: {
     resolve: {

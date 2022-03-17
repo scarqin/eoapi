@@ -31,13 +31,8 @@
               {
                 "glob": "**/*",
                 "input": "extension",
-                "ignore": ["**/node_modules/**","extension/**/static"],
+                "ignore": ["**/node_modules/**"],
                 "output": "/extension/"
-              },
-              {
-                "glob": "**/*",
-                "input": "extension/**/static",
-                "output": "/static/"
               },
               {
                 "glob": "**/*",

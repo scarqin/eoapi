@@ -26,8 +26,7 @@
   "scripts": {
     "postinstall": "(cd app && npm install)&&electron-builder install-app-deps",
     "ng": "ng",
-    "start": "npm-run-all -p electron:serve ng:serve start:vue",
-    "start:vue": "cd extension/vue && yarn start",
+    "start": "npm-run-all -p electron:serve ng:serve",
     "build": "npm run electron:serve-tsc && ng build --base-href ./",
     "build:dev": "npm run build -- -c dev",
     "build:prod": "npm run build -- -c production",

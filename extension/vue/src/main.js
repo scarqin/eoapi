@@ -13,7 +13,10 @@ Vue.use(ElementUI);
 
 let router = null;
 let instance = null;
-
+window.parent.postMessage('i am data from vue main','*');
+window.addEventListener('message', function (event) {
+  console.log('iframe recieve main data:',event.data)
+})
 function render(props = {}) {
   const { container } = props;
   router = new VueRouter({
@@ -53,6 +56,7 @@ export async function bootstrap() {
 }
 
 export async function mount(props) {
+  console.log('postMessage')
   console.log('[vue] props from main framework', props);
   storeTest(props);
   render(props);
