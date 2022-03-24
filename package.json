@@ -4,12 +4,17 @@
   "main": "app/electron-main/main.js",
   "private": true,
   "scripts": {
-    "postinstall": "electron-builder install-app-deps",
-    "start": "npm run electron:tsc &&npm run start:all&& electron . --development",
-    "start:core": "cd core/api-manager/browser&&npm start",
+    "postinstall": "npm-run-all --serial install:*",
+    "start": "npm-run-all  -p startall electron:serve",
+    "startall": "npm-run-all -p start:*",
+    "install-stash:api-manager": "cd core/api-manager/browser&&npm ci",
+    "start:api-manager": "cd core/api-manager/browser&&npm start",
+    "install:workbench": "cd workbench/browser&&npm insall",
     "start:workbench": "cd workbench/browser&&npm start",
-    "start:all": "npm-run-all -p start:*",
-    "electron:dev": "npm run electron:tsc && electron .",
+    "install:node-electron": "electron-builder install-app-deps",
+    "electron:serve": "wait-on tcp:4200 && npm run electron:dev",
+    "electron:dev:static": "npm run electron:tsc && electron .",
+    "electron:dev": "npm run electron:tsc && electron . --development",
     "release": "electron-builder",
     "electron:tsc": "tsc -p tsconfig.json"
   },
@@ -32,7 +37,8 @@
     "eslint": "8.10.0",
     "eslint-plugin-import": "2.25.4",
     "eslint-plugin-jsdoc": "37.9.7",
-    "eslint-plugin-prefer-arrow": "1.2.3"
+    "eslint-plugin-prefer-arrow": "1.2.3",
+    "wait-on": "6.0.1"
   },
   "__npminstall_done": false
 }

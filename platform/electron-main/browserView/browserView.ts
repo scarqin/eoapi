@@ -25,7 +25,7 @@ export class BrowserViewInstance {
     }
     let view = new BrowserView(viewOps);
     view.webContents.loadURL(this.opts.viewPath).finally();
-    view.webContents.openDevTools();
+    // view.webContents.openDevTools();
     win.addBrowserView(view);
     view.setBounds(this.bounds);
     proxyOpenExternel(view);

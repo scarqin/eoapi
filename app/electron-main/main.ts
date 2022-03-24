@@ -7,7 +7,7 @@ import { ModuleManagerInterface } from '../../shared/node/extension-manager/type
 import { AppViews } from './appView';
 import { CoreViews } from './coreView';
 import { processEnv } from '../../platform/node/constant';
-import { proxyOpenExternel } from '../../shared/common/browserView'
+import { proxyOpenExternel } from '../../shared/common/browserView';
 let win: BrowserWindow = null;
 export const subView = {
   appView: null,
@@ -51,11 +51,13 @@ function createWindow(): BrowserWindow {
       if (!subView[i]) break;
       subView[i].remove();
     }
-    subView.mainView = new CoreViews(win).create();
-    subView.appView = new AppViews(win).create('default');
+    subView.mainView = new CoreViews(win);
+    subView.appView = new AppViews(win);
+    subView.mainView.create();
+    subView.appView.create('default');
     for (var i in subView) {
       if (!subView[i]) break;
-      proxyOpenExternel(subView[i]);
+      proxyOpenExternel(subView[i].view);
     }
   });
   loadPage();
@@ -137,23 +139,25 @@ try {
     } else if (arg.action === 'getAppModuleList') {
       returnValue = moduleManager.getAppModuleList();
     } else if (arg.action === 'getSlideModuleList') {
-      returnValue = moduleManager.getSlideModuleList(subView.appView.moduleID);
+      returnValue = moduleManager.getSlideModuleList(subView.appView.view.moduleID);
     } else if (arg.action === 'getSlidePosition') {
-      returnValue = subView.appView.slidePosition;
+      if(!subView.appView.view) return;
+      returnValue = subView.appView.view.slidePosition;
     } else if (arg.action === 'hook') {
       returnValue = 'hook返回';
     } else if (arg.action === 'openApp') {
       if (arg.data.moduleID) {
         // 如果要打开是同一app，忽略
-        if (subView.appView.moduleID === arg.data.moduleID) {
+        if (subView.appView.view.moduleID === arg.data.moduleID) {
           return;
         }
-        subView.appView = new AppViews(win).create(arg.data.moduleID);
+        subView.appView = new AppViews(win);
+        subView.appView.create(arg.data.moduleID);
       }
       returnValue = 'view id';
     } else if (arg.action === 'openModal') {
       console.log('openModal');
-      subView.mainView.webContents.send('connect-main', { action: 'openModal' });
+      subView.mainView.view.webContents.send('connect-main', { action: 'openModal' });
     } else {
       returnValue = 'Invalid data';
     }

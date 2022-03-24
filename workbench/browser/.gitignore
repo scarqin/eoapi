@@ -6,7 +6,9 @@ dist/
 /out-tsc
 /app-builds
 /release
-*.js
+src/**/*.js
+!src/karma.conf.js
+!src/ng1/**/*.js
 *.js.map
 
 # dependencies

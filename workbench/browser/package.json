@@ -17,7 +17,7 @@
   "private": true,
   "scripts": {
     "ng": "ng",
-    "start": "npm run ng:serve",
+    "start": "ng serve --port 4201 -c web",
     "build": "ng build --base-href ./",
     "build:dev": "npm run build -- -c dev",
     "build:prod": "npm run build -- -c production",

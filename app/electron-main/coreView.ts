@@ -5,6 +5,7 @@ import { subView } from './main';
 import { processEnv } from '../../platform/node/constant';
 export class CoreViews {
   moduleID: string;
+  view: BrowserView;
   constructor(private win: BrowserWindow) {
     this.triggleEvent = this.triggleEvent.bind(this);
   }
@@ -13,7 +14,7 @@ export class CoreViews {
    */
   create() {
     const size = screen.getPrimaryDisplay().workAreaSize;
-    let view=new BrowserViewInstance({
+    this.view = new BrowserViewInstance({
       bounds: {
         x: 0,
         y: 0,
@@ -21,11 +22,13 @@ export class CoreViews {
         height: size.height * 0.8,
       },
       partition: '<core-module>',
-      preloadPath: path.join(process.cwd(),'platform','electron-browser','preload.js'),
-      viewPath:processEnv==='development'?'http://localhost:4201':`file://${path.join(process.cwd(),'workbench', 'browser', 'dist', 'index.html')}`
+      preloadPath: path.join(process.cwd(), 'platform', 'electron-browser', 'preload.js'),
+      viewPath:
+        processEnv === 'development'
+          ? 'http://localhost:4201'
+          : `file://${path.join(process.cwd(), 'workbench', 'browser', 'dist', 'index.html')}`,
     }).init(this.win);
     this.watch();
-    return view;
   }
   watch() {
     ipcMain.on('message', this.triggleEvent);
@@ -35,7 +38,7 @@ export class CoreViews {
     if (event.frameId !== 1) return;
     switch (arg.action) {
       case 'connect-dropdown': {
-        this.win.setTopBrowserView(arg.data.action === 'show' ? subView.mainView : subView.appView);
+        this.win.setTopBrowserView((arg.data.action === 'show' ? subView.mainView : subView.appView).view);
         break;
       }
       case 'setBounds': {
@@ -49,11 +52,11 @@ export class CoreViews {
    * @param view
    * @param window
    */
-  remove(view: BrowserView) {
-    if (view) {
-      this.win.removeBrowserView(view);
-      ipcMain.removeListener('message', this.triggleEvent);
-      view = undefined;
-    }
+  remove() {
+    if(!this.view) return;
+    this.win.removeBrowserView(this.view);
+    this.view.webContents.closeDevTools();
+    ipcMain.removeListener('message', this.triggleEvent);
+    this.view = undefined;
   }
 }
