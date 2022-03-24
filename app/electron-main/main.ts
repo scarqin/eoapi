@@ -1,25 +1,20 @@
-import { app, BrowserWindow, ipcMain, screen, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, screen } from 'electron';
 import { EoUpdater } from './updater';
 import * as path from 'path';
 import * as os from 'os';
-import { setupUnit } from './unitWorker';
-import ModuleManager from './core/module/lib/manager';
-import { ModuleManagerInterface } from './core/module/types';
-import { appViews } from './views/app/app';
-import { coreViews } from './views/core/core';
+import ModuleManager from '../../shared/node/extension-manager/manager';
+import { ModuleManagerInterface } from '../../shared/node/extension-manager/types';
+import { AppViews } from './appView';
+import { CoreViews } from './coreView';
+import { processEnv } from '../../platform/node/constant';
+import { proxyOpenExternel } from '../../shared/common/browserView'
 let win: BrowserWindow = null;
 export const subView = {
   appView: null,
   mainView: null,
 };
+const eoUpdater = new EoUpdater();
 const moduleManager: ModuleManagerInterface = ModuleManager();
-const args = process.argv.slice(1),
-  eoUpdater = new EoUpdater(),
-  env = args.some((val) => val === '--serve')
-    ? 'serve'
-    : args.some((val) => val === '--development')
-    ? 'development'
-    : 'production';
 
 function createWindow(): BrowserWindow {
   const electronScreen = screen;
@@ -32,42 +27,38 @@ function createWindow(): BrowserWindow {
     frame: os.type() === 'Darwin' ? true : false, //mac use default frame
     webPreferences: {
       nodeIntegration: true,
-      allowRunningInsecureContent: env === 'serve' ? true : false,
+      allowRunningInsecureContent: processEnv === 'serve' ? true : false,
       contextIsolation: false, // false if you want to run e2e test with Spectron
     },
   });
-  proxyOpenExternel(win);
-  if (env === 'serve') {
-    win.webContents.openDevTools();
+  if (processEnv === 'serve') {
     require('electron-reload')(__dirname, {
       electron: require(path.join(__dirname, '/../node_modules/electron')),
     });
-    win.loadURL('http://localhost:4200');
-  } else {
-    let loadPage = () => {
-      const file: string = `file://${path.join(__dirname, 'views', 'message', 'index.html')}`;
-      // const file: string = `file://${path.join(__dirname, 'views', 'default', 'dist', 'index.html')}`;
-      win.loadURL(file).finally();
-      // win.webContents.openDevTools();
-    };
-    win.webContents.on('did-fail-load', () => {
-      loadPage();
-    });
-    win.webContents.on('did-finish-load', () => {
-      //remove origin view
-      for (var i in subView) {
-        if (!subView[i]) break;
-        subView[i].remove();
-      }
-      subView.mainView = new coreViews(win).create();
-      subView.appView = new appViews(win).create('default');
-      for (var i in subView) {
-        if (!subView[i]) break;
-        proxyOpenExternel(subView[i]);
-      }
-    });
-    loadPage();
   }
+  proxyOpenExternel(win);
+  let loadPage = () => {
+    const file: string = `file://${path.join(__dirname, '../browser', 'index.html')}`;
+    win.loadURL(file).finally();
+    // win.webContents.openDevTools();
+  };
+  win.webContents.on('did-fail-load', () => {
+    loadPage();
+  });
+  win.webContents.on('did-finish-load', () => {
+    //remove origin view
+    for (var i in subView) {
+      if (!subView[i]) break;
+      subView[i].remove();
+    }
+    subView.mainView = new CoreViews(win).create();
+    subView.appView = new AppViews(win).create('default');
+    for (var i in subView) {
+      if (!subView[i]) break;
+      proxyOpenExternel(subView[i]);
+    }
+  });
+  loadPage();
 
   // Emitted when the window is closed.
   win.on('closed', () => {
@@ -79,15 +70,7 @@ function createWindow(): BrowserWindow {
 
   return win;
 }
-//open link through default browser not electron
-function proxyOpenExternel(view) {
-  view.webContents.setWindowOpenHandler(({ url }) => {
-    setImmediate(() => {
-      shell.openExternal(url);
-    });
-    return { action: 'deny' };
-  });
-}
+
 try {
   // This method will be called when Electron has finished
   // initialization and is ready to create browser windows.
@@ -98,7 +81,8 @@ try {
     eoUpdater.check();
   });
   //!TODO only api manage app need this
-  setupUnit(subView.appView);
+  // setupUnit(subView.appView);
+
   // Quit when all windows are closed.
   app.on('window-all-closed', () => {
     // On OS X it is common for applications and their menu bar
@@ -164,12 +148,12 @@ try {
         if (subView.appView.moduleID === arg.data.moduleID) {
           return;
         }
-        subView.appView = new appViews(win).create(arg.data.moduleID);
+        subView.appView = new AppViews(win).create(arg.data.moduleID);
       }
       returnValue = 'view id';
     } else if (arg.action === 'openModal') {
-      console.log('openModal')
-      subView.mainView.webContents.send('connect-main',{action:'openModal'} );
+      console.log('openModal');
+      subView.mainView.webContents.send('connect-main', { action: 'openModal' });
     } else {
       returnValue = 'Invalid data';
     }

@@ -1,38 +1,29 @@
 import { BrowserView, screen, BrowserWindow, session, ipcMain } from 'electron';
+import { BrowserViewInstance } from '../../platform/electron-main/browserView/browserView';
 import * as path from 'path';
-import { subView } from '../../app/electron-main/main';
-export class coreViews {
+import { subView } from './main';
+import { processEnv } from '../../platform/node/constant';
+export class CoreViews {
   moduleID: string;
   constructor(private win: BrowserWindow) {
-    this.triggleEvent = this.triggleEvent.bind(this)
+    this.triggleEvent = this.triggleEvent.bind(this);
   }
   /**
    * create core module browserview with sidebar/navbar/toolbar
    */
   create() {
     const size = screen.getPrimaryDisplay().workAreaSize;
-    const ses = session.fromPartition('<core-module>');
-    ses.setPreloads([path.join(__dirname, 'preload.js')]);
-    let view = new BrowserView({
-      webPreferences: {
-        webSecurity: false,
-        nodeIntegration: true,
-        contextIsolation: false,
-        devTools: true,
-        webviewTag: true,
-        session: ses,
+    let view=new BrowserViewInstance({
+      bounds: {
+        x: 0,
+        y: 0,
+        width: size.width * 0.8,
+        height: size.height * 0.8,
       },
-    });
-    view.webContents.loadURL('http://localhost:4201').finally();
-    // view.webContents.loadURL(`file://${path.join(__dirname, 'browser', 'dist', 'index.html')}`).finally();
-    view.webContents.openDevTools();
-    this.win.addBrowserView(view);
-    view.setBounds({
-      x: 0,
-      y: 0,
-      width: size.width * 0.8,
-      height: size.height * 0.8,
-    });
+      partition: '<core-module>',
+      preloadPath: path.join(process.cwd(),'platform','electron-browser','preload.js'),
+      viewPath:processEnv==='development'?'http://localhost:4201':`file://${path.join(process.cwd(),'workbench', 'browser', 'dist', 'index.html')}`
+    }).init(this.win);
     this.watch();
     return view;
   }

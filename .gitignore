@@ -6,6 +6,8 @@ dist/
 /out-tsc
 /app-builds
 /release
+/app/**/*.js
+*.js
 *.js.map
 
 # dependencies

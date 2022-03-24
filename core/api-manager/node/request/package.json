@@ -1,0 +1,17 @@
+{
+    "name": "eoapi-unit-test",
+    "version": "0.0.1",
+    "main": "main.js",
+    "scripts": {
+    },
+    "dependencies": {
+      "crypto-js": "^4.1.1",
+      "form-data": "^4.0.0",
+      "iconv-lite": "^0.6.3",
+      "xml2js": "^0.4.23",
+      "content-disposition": "^0.5.4",
+      "rxjs": "^7.5.4"
+    },
+    "__npminstall_done": false
+  }
+  
