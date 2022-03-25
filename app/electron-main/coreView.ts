@@ -13,14 +13,11 @@ export class CoreViews {
    * create core module browserview with sidebar/navbar/toolbar
    */
   create() {
-    const size = screen.getPrimaryDisplay().workAreaSize;
+    const _bounds = this.win.getContentBounds();
+    _bounds.x = 0;
+    _bounds.y = 0;
     this.view = new BrowserViewInstance({
-      bounds: {
-        x: 0,
-        y: 0,
-        width: size.width * 0.8,
-        height: size.height * 0.8,
-      },
+      bounds: _bounds,
       partition: '<core-module>',
       //preloadPath: path.join(process.cwd(), 'workbench', 'electron-browser', 'preload.js'),
       preloadPath: path.join(__dirname, '../../', 'workbench', 'electron-browser', 'preload.js'),
