@@ -1,8 +1,8 @@
 import * as path from 'path';
 import spawn from 'cross-spawn';
 import { ModuleHandlerOptions, ModuleHandlerResult, ModuleInfo } from '../types';
-import { fileExists, readJson, writeJson } from '../../file';
-import { resolveModule } from '../../module';
+import { fileExists, readJson, writeJson } from '../../../../shared/node/file';
+import { resolveModule } from '../../../../shared/node/module';
 
 /**
  * 本地模块管理器

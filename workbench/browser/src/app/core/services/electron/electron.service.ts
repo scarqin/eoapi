@@ -6,8 +6,8 @@ import { ipcRenderer, webFrame, app } from 'electron';
 import * as childProcess from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
-import { StorageHandleStatus, StorageListenArgs, StorageProcessType } from '../../../../../../../shared/browser/IndexedDB';
-import { storage } from '../../../../../../../shared/browser/IndexedDB/lib';
+import { StorageHandleStatus, StorageListenArgs, StorageProcessType } from '../../../../../../../platform/electron-browser/IndexedDB';
+import { storage } from '../../../../../../../platform/electron-browser//IndexedDB/lib';
 
 @Injectable({
   providedIn: 'root',

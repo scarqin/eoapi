@@ -1,5 +1,5 @@
-import ModuleManager from '../../shared/node/extension-manager/lib/manager';
-import { ModuleInfo, ModuleManagerInterface, ModuleType } from '../../shared/node/extension-manager/types';
+import ModuleManager from '../../platform/node/extension-manager/lib/manager';
+import { ModuleInfo, ModuleManagerInterface, ModuleType } from '../../platform/node/extension-manager/types';
 import { getViewBounds, SidePosition, ViewBounds, ViewZone } from '../../shared/common/bounds';
 import { BrowserView, BrowserWindow } from 'electron';
 import * as path from 'path';

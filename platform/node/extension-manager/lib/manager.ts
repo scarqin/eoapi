@@ -1,4 +1,4 @@
-import { MODULE_DIR as baseDir } from '../../../common/constant';
+import { MODULE_DIR as baseDir } from '../../../../shared/common/constant';
 import { ModuleHandler } from './handler';
 import { ModuleInfo, ModuleManagerInfo, ModuleManagerInterface, ModuleType } from '../types';
 import * as path from 'path';

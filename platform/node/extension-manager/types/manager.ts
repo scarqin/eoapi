@@ -1,4 +1,4 @@
-import { SidePosition } from '../../../common/bounds';
+import { SidePosition } from '../../../../shared/common/bounds';
 
 /**
  * 模块类型
