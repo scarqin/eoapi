@@ -2,12 +2,15 @@ import { app, BrowserWindow, ipcMain, screen } from 'electron';
 import { EoUpdater } from './updater';
 import * as path from 'path';
 import * as os from 'os';
-import ModuleManager from '../../shared/node/extension-manager/manager';
-import { ModuleManagerInterface } from '../../shared/node/extension-manager/types';
+import ModuleManager from '../../shared/node/extension-manager/lib/manager'; 
+import { ModuleManagerInterface } from '../../shared/node/extension-manager';
+import { StorageProcessType } from '../../shared/browser/IndexedDB';
 import { AppViews } from './appView';
 import { CoreViews } from './coreView';
 import { processEnv } from '../../platform/node/constant';
-import { proxyOpenExternel } from '../../shared/common/browserView';
+import { proxyOpenExternal } from '../../shared/common/browserView';
+import { deleteFile, readJson } from '../../shared/node/file';
+import { STORAGE_TEMP as storageTemp } from '../../shared/common/constant';
 let win: BrowserWindow = null;
 export const subView = {
   appView: null,
@@ -15,6 +18,8 @@ export const subView = {
 };
 const eoUpdater = new EoUpdater();
 const moduleManager: ModuleManagerInterface = ModuleManager();
+const electronRemote = require('@electron/remote/main');
+electronRemote.initialize();
 
 function createWindow(): BrowserWindow {
   const electronScreen = screen;
@@ -36,10 +41,10 @@ function createWindow(): BrowserWindow {
       electron: require(path.join(__dirname, '/../node_modules/electron')),
     });
   }
-  proxyOpenExternel(win);
+  proxyOpenExternal(win);
   let loadPage = () => {
     const file: string = `file://${path.join(__dirname, '../browser', 'index.html')}`;
-    win.loadURL(file).finally();
+    win.loadURL(file);
     // win.webContents.openDevTools();
   };
   win.webContents.on('did-fail-load', () => {
@@ -55,9 +60,11 @@ function createWindow(): BrowserWindow {
     subView.appView = new AppViews(win);
     subView.mainView.create();
     subView.appView.create('default');
+    electronRemote.enable(subView.mainView.webContents);
+    electronRemote.enable(subView.appView.webContents);
     for (var i in subView) {
       if (!subView[i]) break;
-      proxyOpenExternel(subView[i].view);
+      proxyOpenExternal(subView[i].view);
     }
   });
   loadPage();
@@ -126,6 +133,24 @@ try {
       }
     }
   });
+
+  ipcMain.on('eo-storage', (event, args) => {
+    let returnValue: any;
+    if (args.type === StorageProcessType.default || args.type === StorageProcessType.remote) {
+      subView.mainView.webContents.send('eo-storage', args);
+      returnValue = null;
+    } else if (args.type === StorageProcessType.sync) {
+      subView.mainView.webContents.send('eo-storage', args);
+      let data = readJson(storageTemp);
+      while (data === null) {
+        data = readJson(storageTemp);
+      }
+      deleteFile(storageTemp);
+      returnValue = data;    
+    } else if (args.type === 'result') {
+      subView.appView.webContents.send('storageCallback', args.result);
+    }
+  });
   // 这里可以封装成类+方法匹配调用，不用多个if else
   ipcMain.on('eo-sync', (event, arg) => {
     let returnValue: any;
@@ -140,9 +165,9 @@ try {
       returnValue = moduleManager.getAppModuleList();
     } else if (arg.action === 'getSlideModuleList') {
       returnValue = moduleManager.getSlideModuleList(subView.appView.view.moduleID);
-    } else if (arg.action === 'getSlidePosition') {
+    } else if (arg.action === 'getSidePosition') {
       if(!subView.appView.view) return;
-      returnValue = subView.appView.view.slidePosition;
+      returnValue = subView.appView.view.sidePosition;
     } else if (arg.action === 'hook') {
       returnValue = 'hook返回';
     } else if (arg.action === 'openApp') {

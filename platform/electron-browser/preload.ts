@@ -8,7 +8,7 @@ window.eo = {
   version: '1.0.0',
 };
 // 边栏显示
-window.eo.slidePosition = ipcRenderer.sendSync('eo-sync', { action: 'getSlidePosition' }) || 'left';
+window.eo.sidePosition = ipcRenderer.sendSync('eo-sync', { action: 'getSidePosition' }) || 'left';
 // 获取模块列表
 if (apiAccessRules.includes('getModules')) {
   window.eo.getModules = () => {

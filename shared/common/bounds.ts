@@ -1,7 +1,7 @@
 /**
  * 边栏放置位置
  */
-export enum SlidePosition {
+export enum SidePosition {
   left = 'left',
   right = 'right',
   top = 'top',
@@ -33,10 +33,10 @@ export interface ViewBounds {
  * @param zone
  * @param width
  * @param height
- * @param slidePosition
+ * @param sidePosition
  */
-export const getViewBounds = (zone: ViewZone, width: number, height: number, slidePosition?: SlidePosition): ViewBounds => {
-  return calculateViewBounds(width, height, slidePosition).get(zone);
+export const getViewBounds = (zone: ViewZone, width: number, height: number, sidePosition?: SidePosition): ViewBounds => {
+  return calculateViewBounds(width, height, sidePosition).get(zone);
 };
 
 /**
@@ -44,10 +44,10 @@ export const getViewBounds = (zone: ViewZone, width: number, height: number, sli
  * TODO：需要加上隐藏边栏的属性参数判断
  * @param width
  * @param height
- * @param slidePosition
+ * @param sidePosition
  */
-export const calculateViewBounds = (width: number, height: number, slidePosition?: SlidePosition): Map<ViewZone, ViewBounds> => {
-  const position: SlidePosition = slidePosition || SlidePosition.left;
+export const calculateViewBounds = (width: number, height: number, sidePosition?: SidePosition): Map<ViewZone, ViewBounds> => {
+  const position: SidePosition = sidePosition || SidePosition.left;
   const _topHeight: number = 50;
   const _bottomHeight: number = 30;
   const _slideWidth: number = 50;
@@ -57,26 +57,26 @@ export const calculateViewBounds = (width: number, height: number, slidePosition
   let sideBounds: ViewBounds = {x: 0, y: 0, width: _slideWidth, height: _mainHeight };
   let mainBounds: ViewBounds = {x: 0, y: 0, width: width, height: _mainHeight};
   switch (position) {
-    case SlidePosition.left:
+    case SidePosition.left:
       sideBounds.y = topBounds.height;
       mainBounds.x = sideBounds.width;
       mainBounds.y = topBounds.height;
       mainBounds.width -= mainBounds.x;
       break;
-    case SlidePosition.right:
+    case SidePosition.right:
       sideBounds.y = topBounds.height;
       sideBounds.x = width - sideBounds.width;
       mainBounds.y = topBounds.height;
       mainBounds.width = sideBounds.x;
       break;
-    case SlidePosition.top:
+    case SidePosition.top:
       sideBounds.height = sideBounds.width;
       sideBounds.width = width;
       sideBounds.y = topBounds.height;
       mainBounds.height = height - topBounds.height - sideBounds.height - bottomBounds.height;
       mainBounds.y = topBounds.height + sideBounds.height;
       break;
-    case SlidePosition.bottom:
+    case SidePosition.bottom:
       sideBounds.height = sideBounds.width;
       sideBounds.width = width;
       mainBounds.y = topBounds.height;

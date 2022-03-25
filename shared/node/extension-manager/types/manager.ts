@@ -1,4 +1,4 @@
-import { SlidePosition } from '../../../common/bounds';
+import { SidePosition } from '../../../common/bounds';
 
 /**
  * 模块类型
@@ -50,7 +50,7 @@ export interface ModuleInfo {
   // 模块路径
   baseDir?: string;
   // 边栏显示
-  slidePosition?: SlidePosition;
+  sidePosition?: SidePosition;
 }
 
 /**

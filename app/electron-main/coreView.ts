@@ -22,7 +22,8 @@ export class CoreViews {
         height: size.height * 0.8,
       },
       partition: '<core-module>',
-      preloadPath: path.join(process.cwd(), 'platform', 'electron-browser', 'preload.js'),
+      //preloadPath: path.join(process.cwd(), 'workbench', 'electron-browser', 'preload.js'),
+      preloadPath: path.join(__dirname, '../../', 'workbench', 'electron-browser', 'preload.js'),
       viewPath:
         processEnv === 'development'
           ? 'http://localhost:4201'

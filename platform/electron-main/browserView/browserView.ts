@@ -1,6 +1,7 @@
+import { throws } from 'assert';
 import { BrowserWindow, BrowserView, session, BrowserViewConstructorOptions } from 'electron';
 import { ViewBounds } from '../../../shared/common/bounds';
-import { proxyOpenExternel } from '../../../shared/common/browserView';
+import { proxyOpenExternal } from '../../../shared/common/browserView';
 import { BrowserViewOpts } from './browserView.type';
 export class BrowserViewInstance {
   bounds: ViewBounds;
@@ -8,8 +9,6 @@ export class BrowserViewInstance {
     this.bounds = this.opts.bounds;
   }
   init(win: BrowserWindow) {
-    const ses = session.fromPartition(this.opts.partition);
-    ses.setPreloads([this.opts.preloadPath]);
     let viewOps: BrowserViewConstructorOptions = {
       webPreferences: {
         webSecurity: false,
@@ -17,18 +16,23 @@ export class BrowserViewInstance {
         contextIsolation: false,
         devTools: true,
         webviewTag: true,
-        session: ses,
       },
     };
+    if (this.opts.preloadPath) {
+      const partition = this.opts.partition || '<core-module>';
+      const ses = session.fromPartition(partition);
+      ses.setPreloads([this.opts.preloadPath]);
+      viewOps.webPreferences.session = ses;
+    }
     if (this.opts.preload) {
       viewOps.webPreferences.preload = this.opts.preload;
     }
     let view = new BrowserView(viewOps);
-    view.webContents.loadURL(this.opts.viewPath).finally();
-    // view.webContents.openDevTools();
+    view.webContents.loadURL(this.opts.viewPath);
+    view.webContents.openDevTools();
     win.addBrowserView(view);
     view.setBounds(this.bounds);
-    proxyOpenExternel(view);
+    proxyOpenExternal(view);
     return view;
   }
 }

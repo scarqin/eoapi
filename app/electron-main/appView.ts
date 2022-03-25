@@ -1,6 +1,6 @@
-import ModuleManager from '../../shared/node/extension-manager/manager';
+import ModuleManager from '../../shared/node/extension-manager/lib/manager';
 import { ModuleInfo, ModuleManagerInterface, ModuleType } from '../../shared/node/extension-manager/types';
-import { getViewBounds, SlidePosition, ViewBounds, ViewZone } from '../../shared/common/bounds';
+import { getViewBounds, SidePosition, ViewBounds, ViewZone } from '../../shared/common/bounds';
 import { BrowserView, BrowserWindow } from 'electron';
 import * as path from 'path';
 import { BrowserViewInstance } from '../../platform/electron-main/browserView/browserView';
@@ -10,7 +10,7 @@ const moduleManager: ModuleManagerInterface = ModuleManager();
 export class AppViews {
   moduleID: string;
   view: BrowserView;
-  slidePosition: SlidePosition = SlidePosition.left;
+  sidePosition: SidePosition = SidePosition.left;
   constructor(private win: BrowserWindow) {}
   /**
    * 根据模块ID启动app模块的加载
@@ -24,7 +24,7 @@ export class AppViews {
       let refresh: boolean = false;
       if (module.isApp && this.moduleID !== module.moduleID) {
         this.moduleID = module.moduleID;
-        this.slidePosition = module.slidePosition;
+        this.sidePosition = module.sidePosition;
         refresh = true;
       }
       return this.createAppView(module, refresh);
@@ -47,7 +47,7 @@ export class AppViews {
    */
   private createAppView(module: ModuleInfo, refresh: boolean): BrowserView {
     const windBounds = this.win.getContentBounds();
-    const _bounds: ViewBounds = getViewBounds(ViewZone.main, windBounds.width, windBounds.height, this.slidePosition);
+    const _bounds: ViewBounds = getViewBounds(ViewZone.main, windBounds.width, windBounds.height, this.sidePosition);
     let _view = new BrowserViewInstance({
       bounds: _bounds,
       partition: `<${module.moduleID}>`,

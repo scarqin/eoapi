@@ -35,6 +35,20 @@ export const readFile = (file: string): string => {
 };
 
 /**
+ * Delete file.
+ * @param file string
+ * @returns 
+ */
+export const deleteFile = (file: string): boolean => {
+  try {
+    fs.unlinkSync(file);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
  * Write data into file.
  * @param file
  * @param data
