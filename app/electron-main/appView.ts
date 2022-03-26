@@ -51,7 +51,8 @@ export class AppViews {
     let _view = new BrowserViewInstance({
       bounds: _bounds,
       partition: `<${module.moduleID}>`,
-      preloadPath: path.join(process.cwd(), 'platform', 'electron-browser', 'preload.js'),
+      preloadPath: path.join(__dirname, '../../', 'platform', 'electron-browser', 'preload.js'),
+      //preloadPath: path.join(process.cwd(), 'platform', 'electron-browser', 'preload.js'),
       preload: module.preload,
       viewPath: processEnv === 'development' ? 'http://localhost:4200' : `file://${module.main}`,
     }).init(this.win);
@@ -61,7 +62,8 @@ export class AppViews {
     });
     this.view.webContents.once('dom-ready', () => {
       _view.setBounds(_bounds);
-       _view.webContents.openDevTools();
+      _view.webContents.openDevTools();
+      require('@electron/remote/main').enable(this.view.webContents);
       //_view.setAutoResize({ width: true });
       //this.win.webContents.executeJavaScript(`window.getModules1()`);
     });

@@ -11,7 +11,7 @@ import {
 
 import { Subject } from 'rxjs';
 import { pairwise, takeUntil, debounceTime } from 'rxjs/operators';
-import { ApiParamsTypeFormData, ApiParamsTypeJsonOrXml, ApiEditBody, ApiBodyType, JsonRootType } from '@eoapi/storage';
+import { ApiParamsTypeFormData, ApiParamsTypeJsonOrXml, ApiEditBody, ApiBodyType, JsonRootType } from '../../../../../../../../../platform/electron-browser/IndexedDB';
 import { ApiEditService } from '../api-edit.service';
 @Component({
   selector: 'eo-api-edit-body',

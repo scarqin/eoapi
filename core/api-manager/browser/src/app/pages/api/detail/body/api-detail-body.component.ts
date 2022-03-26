@@ -1,6 +1,6 @@
 import { Component, OnInit, Input, OnChanges, OnDestroy } from '@angular/core';
 import { Subject } from 'rxjs';
-import { ApiEditBody, ApiBodyType, JsonRootType } from '@eoapi/storage';
+import { ApiEditBody, ApiBodyType, JsonRootType } from '../../../../../../../../../platform/electron-browser/IndexedDB';
 import { ApiDetailService } from '../api-detail.service';
 @Component({
   selector: 'eo-api-detail-body',

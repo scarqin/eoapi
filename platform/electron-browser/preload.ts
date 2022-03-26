@@ -2,6 +2,14 @@ const { ipcRenderer } = require('electron');
 console.log('eoapi public api load');
 // 可以加上条件判断，根据不同模块id哪些允许放出
 const apiAccessRules = ipcRenderer.sendSync('eo-sync', { action: 'getApiAccessRules' }) || [];
+
+let storageCallback = null; 
+ipcRenderer.on('storageCallback', (event, result) => {
+  console.log('storageCallback');
+  if (storageCallback && typeof storageCallback === 'function') {
+    storageCallback(result);
+  }
+});
 // 其他子应用可访问的api队列都集中到.eo上
 window.eo = {
   name: 'Eoapi public api',
@@ -43,7 +51,7 @@ window.eo.openModal = () => {
 window.eo.closeModal = () => {
   return ipcRenderer.sendSync('eo-sync', { action: 'closeModal' });
 };
-window['eo'].toogleViewZIndex = (visible) => {
+window.eo.toogleViewZIndex = (visible) => {
   ipcRenderer.send('message', {
     action: 'connect-dropdown',
     data: {
@@ -51,9 +59,42 @@ window['eo'].toogleViewZIndex = (visible) => {
     },
   });
 };
-window['eo'].getModules = () => {
+window.eo.getModules = () => {
   return ipcRenderer.sendSync('eo-sync', { action: 'getModules' });
 };
-window['eo'].openApp = (inputArg) => {
+window.eo.openApp = (inputArg) => {
   return ipcRenderer.sendSync('eo-sync', { action: 'openApp', data: inputArg });
+};
+window.eo.storage = (args, callback: any) => {
+  console.log('run preload storage');
+  storageCallback = callback;
+  args.type = 'default'; 
+  ipcRenderer.send('eo-storage', args);
+};
+window.eo.storageSync = (args) => {
+  console.log('run preload storageSync');
+  args.type = 'sync'; 
+  return ipcRenderer.sendSync('eo-storage', args);
+};
+window.eo.storageRemote = (args) => {
+  console.log('run preload storageRemote');
+  args.type = 'remote'; 
+  const shareObject = window.require('@electron/remote').getGlobal('shareObject');
+  shareObject.storageResult = null; 
+  ipcRenderer.send('eo-storage', args);
+  let output: any = shareObject.storageResult;;
+  let count: number = 0;
+  while (output === null) {
+    if (count > 1500) {
+      output = {
+        status: 'error',
+        data: 'storage remote load error' 
+      };
+      break;
+    }
+    output = shareObject.storageResult;
+    ++count;
+  }
+  shareObject.storageResult = null; 
+  return output;
 };

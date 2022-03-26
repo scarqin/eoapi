@@ -19,13 +19,16 @@ export class CoreViews {
     this.view = new BrowserViewInstance({
       bounds: _bounds,
       partition: '<core-module>',
-      //preloadPath: path.join(process.cwd(), 'workbench', 'electron-browser', 'preload.js'),
-      preloadPath: path.join(__dirname, '../../', 'workbench', 'electron-browser', 'preload.js'),
+      preloadPath: path.join(__dirname, '../../', 'platform', 'electron-browser', 'preload.js'),
       viewPath:
         processEnv === 'development'
           ? 'http://localhost:4201'
           : `file://${path.join(process.cwd(), 'workbench', 'browser', 'dist', 'index.html')}`,
     }).init(this.win);
+
+    this.view.webContents.once('dom-ready', () => {
+      require('@electron/remote/main').enable(this.view.webContents);
+    });
     this.watch();
   }
   watch() {

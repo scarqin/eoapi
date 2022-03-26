@@ -4,13 +4,14 @@ import * as path from 'path';
 import * as os from 'os';
 import ModuleManager from '../../platform/node/extension-manager/lib/manager'; 
 import { ModuleManagerInterface } from '../../platform/node/extension-manager';
-import { StorageProcessType } from '../../platform/electron-browser/IndexedDB';
+import { StorageHandleStatus, StorageProcessType } from '../../platform/electron-browser/IndexedDB';
 import { AppViews } from './appView';
 import { CoreViews } from './coreView';
 import { processEnv } from '../../platform/node/constant';
 import { proxyOpenExternal } from '../../shared/common/browserView';
 import { deleteFile, readJson } from '../../shared/node/file';
 import { STORAGE_TEMP as storageTemp } from '../../shared/common/constant';
+import { timeout } from 'rxjs';
 let win: BrowserWindow = null;
 export const subView = {
   appView: null,
@@ -18,8 +19,12 @@ export const subView = {
 };
 const eoUpdater = new EoUpdater();
 const moduleManager: ModuleManagerInterface = ModuleManager();
-const electronRemote = require('@electron/remote/main');
-electronRemote.initialize();
+// Remote
+const mainRemote = require('@electron/remote/main');
+mainRemote.initialize();
+global.shareObject = {
+  storageResult: null
+};
 
 function createWindow(): BrowserWindow {
   const electronScreen = screen;
@@ -45,12 +50,13 @@ function createWindow(): BrowserWindow {
   let loadPage = () => {
     const file: string = `file://${path.join(__dirname, '../browser', 'index.html')}`;
     win.loadURL(file);
-    // win.webContents.openDevTools();
+    win.webContents.openDevTools();
   };
   win.webContents.on('did-fail-load', () => {
     loadPage();
   });
   win.webContents.on('did-finish-load', () => {
+    mainRemote.enable(win.webContents);
     //remove origin view
     for (var i in subView) {
       if (!subView[i]) break;
@@ -60,12 +66,6 @@ function createWindow(): BrowserWindow {
     subView.appView = new AppViews(win);
     subView.mainView.create();
     subView.appView.create('default');
-    electronRemote.enable(subView.mainView.webContents);
-    electronRemote.enable(subView.appView.webContents);
-    for (var i in subView) {
-      if (!subView[i]) break;
-      proxyOpenExternal(subView[i].view);
-    }
   });
   loadPage();
 
@@ -137,18 +137,28 @@ try {
   ipcMain.on('eo-storage', (event, args) => {
     let returnValue: any;
     if (args.type === StorageProcessType.default || args.type === StorageProcessType.remote) {
-      subView.mainView.webContents.send('eo-storage', args);
+      win.webContents.send('eo-storage', args);
       returnValue = null;
     } else if (args.type === StorageProcessType.sync) {
-      subView.mainView.webContents.send('eo-storage', args);
+      deleteFile(storageTemp);
+      win.webContents.send('eo-storage', args);
       let data = readJson(storageTemp);
+      let count: number = 0;
       while (data === null) {
+        if (count > 1500) {
+          data = {
+            status: StorageHandleStatus.error,
+            data: 'storage sync load error'
+          };
+          break;
+        }
         data = readJson(storageTemp);
+        ++count;
       }
       deleteFile(storageTemp);
       returnValue = data;    
     } else if (args.type === 'result') {
-      subView.appView.webContents.send('storageCallback', args.result);
+      subView.appView.view.webContents.send('storageCallback', args.result);
     }
   });
   // 这里可以封装成类+方法匹配调用，不用多个if else
