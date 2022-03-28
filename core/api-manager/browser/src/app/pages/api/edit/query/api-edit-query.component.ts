@@ -1,5 +1,5 @@
 import { Component, OnInit, Input, ChangeDetectorRef,AfterViewChecked,OnChanges } from '@angular/core';
-import { ApiEditQuery } from '../../../../../../../../../platform/electron-browser/IndexedDB';
+import { ApiEditQuery } from '../../../../../../../../../platform/browser/IndexedDB';
 import { ApiEditService } from '../api-edit.service';
 
 @Component({

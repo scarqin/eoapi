@@ -4,7 +4,7 @@ import * as path from 'path';
 import * as os from 'os';
 import ModuleManager from '../../platform/node/extension-manager/lib/manager'; 
 import { ModuleManagerInterface } from '../../platform/node/extension-manager';
-import { StorageHandleStatus, StorageProcessType } from '../../platform/electron-browser/IndexedDB';
+import { StorageHandleStatus, StorageProcessType } from '../../platform/browser/IndexedDB';
 import { AppViews } from './appView';
 import { CoreViews } from './coreView';
 import { processEnv } from '../../platform/node/constant';

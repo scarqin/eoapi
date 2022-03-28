@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { StorageHandleResult, StorageHandleStatus } from '../../../../../../../../platform/electron-browser/IndexedDB';
+import { StorageHandleResult, StorageHandleStatus } from '../../../../../../../../platform/browser/IndexedDB';
 /**
  * @description
  * A storage service with IndexedDB.

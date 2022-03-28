@@ -1,5 +1,5 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { Group, StorageHandleResult, StorageHandleStatus } from '../../../../../../../../../platform/electron-browser/IndexedDB';
+import { Group, StorageHandleResult, StorageHandleStatus } from '../../../../../../../../../platform/browser/IndexedDB';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NzModalRef } from 'ng-zorro-antd/modal';
 import { MessageService } from '../../../../shared/services/message';

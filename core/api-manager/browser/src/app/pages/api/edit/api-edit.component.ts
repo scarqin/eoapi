@@ -10,7 +10,7 @@ import { debounceTime, take, takeUntil, pairwise, filter } from 'rxjs/operators'
 import { MessageService } from '../../../shared/services/message';
 import { StorageService } from '../../../shared/services/storage';
 
-import { Group, ApiData, RequestProtocol, RequestMethod, ApiEditRest, StorageHandleResult, StorageHandleStatus } from '../../../../../../../../platform/electron-browser/IndexedDB';
+import { Group, ApiData, RequestProtocol, RequestMethod, ApiEditRest, StorageHandleResult, StorageHandleStatus } from '../../../../../../../../platform/browser/IndexedDB';
 import { ApiTabService } from '../tab/api-tab.service';
 
 import { objectToArray } from '../../../utils';

@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild } from '@angular/core';
 import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { GroupTreeItem, GroupApiDataModel } from '../../../../shared/models';
-import { Group, ApiData, StorageHandleResult, StorageHandleStatus } from '../../../../../../../../../platform/electron-browser/IndexedDB';
+import { Group, ApiData, StorageHandleResult, StorageHandleStatus } from '../../../../../../../../../platform/browser/IndexedDB';
 import { Message } from '../../../../shared/services/message/message.model';
 import { NzModalRef } from 'ng-zorro-antd/modal';
 import { NzFormatEmitEvent, NzTreeNode } from 'ng-zorro-antd/tree';

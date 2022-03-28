@@ -3,7 +3,7 @@ import { formatDate } from '@angular/common';
 import { ApiTestService } from '../api-test.service';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { StorageService } from '../../../../shared/services/storage';
-import { ApiTestHistory, ApiTestHistoryFrame, StorageHandleResult, StorageHandleStatus } from '../../../../../../../../../platform/electron-browser/IndexedDB';
+import { ApiTestHistory, ApiTestHistoryFrame, StorageHandleResult, StorageHandleStatus } from '../../../../../../../../../platform/browser/IndexedDB';
 
 @Component({
   selector: 'eo-api-test-history',

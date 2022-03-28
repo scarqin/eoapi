@@ -1,6 +1,6 @@
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { Store } from '@ngxs/store';
-import { StorageHandleResult, StorageHandleStatus } from '../../../../../../../platform/electron-browser/IndexedDB';
+import { StorageHandleResult, StorageHandleStatus } from '../../../../../../../platform/browser/IndexedDB';
 import { ElectronService } from '../../core/services';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { uuid as uid } from '../../utils/index';

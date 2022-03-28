@@ -3,7 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Select } from '@ngxs/store';
 
-import { ApiData, RequestMethod, RequestProtocol, StorageHandleResult, StorageHandleStatus } from '../../../../../../../../platform/electron-browser/IndexedDB';
+import { ApiData, RequestMethod, RequestProtocol, StorageHandleResult, StorageHandleStatus } from '../../../../../../../../platform/browser/IndexedDB';
 import { MessageService } from '../../../shared/services/message';
 
 import { interval, Subscription, Observable, of, Subject } from 'rxjs';
