@@ -9,7 +9,7 @@
     "startall": "npm-run-all -p start:*",
     "install:app": "cd app/browser&&npm install",
     "start:app": "cd app/browser&&npm run build",
-    "install-stash:api-manager": "cd core/api-manager/browser&&npm ci",
+    "install:api-manager": "cd core/api-manager/browser&&npm ci",
     "start:api-manager": "cd core/api-manager/browser&&npm start",
     "install:workbench": "cd workbench/browser&&npm install",
     "start:workbench": "cd workbench/browser&&npm start",
