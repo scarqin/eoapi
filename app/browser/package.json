@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "A storage load service.",
   "scripts": {
-    "build": "rimraf ./dist && rollup -c rollup.config.js",
+    "build": "rimraf ./dist && rollup -c rollup.config",
     "dev": "rollup -c rollup.config.js -w"
   },
   "devDependencies": {
