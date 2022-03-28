@@ -35,8 +35,8 @@ export interface ViewBounds {
  * @param height
  * @param sidePosition
  */
-export const getViewBounds = (zone: ViewZone, width: number, height: number, sidePosition?: SidePosition): ViewBounds => {
-  return calculateViewBounds(width, height, sidePosition).get(zone);
+export const getViewBounds = (zone: ViewZone, width: number, height: number, sidePosition?: SidePosition, sideWidth?: number): ViewBounds => {
+  return calculateViewBounds(width, height, sidePosition, sideWidth).get(zone);
 };
 
 /**
@@ -46,15 +46,15 @@ export const getViewBounds = (zone: ViewZone, width: number, height: number, sid
  * @param height
  * @param sidePosition
  */
-export const calculateViewBounds = (width: number, height: number, sidePosition?: SidePosition): Map<ViewZone, ViewBounds> => {
+export const calculateViewBounds = (width: number, height: number, sidePosition?: SidePosition, sideWidth?: number): Map<ViewZone, ViewBounds> => {
   const position: SidePosition = sidePosition || SidePosition.left;
   const _topHeight: number = 50;
   const _bottomHeight: number = 30;
-  const _slideWidth: number = 50;
+  const _sideWidth: number = sideWidth || 50;
   const _mainHeight: number = height - _topHeight - _bottomHeight;
   let topBounds: ViewBounds = {x: 0, y: 0, width: width, height: _topHeight};
   let bottomBounds: ViewBounds = {x: 0, y: (height - _bottomHeight), width: width, height: _bottomHeight};
-  let sideBounds: ViewBounds = {x: 0, y: 0, width: _slideWidth, height: _mainHeight };
+  let sideBounds: ViewBounds = {x: 0, y: 0, width: _sideWidth, height: _mainHeight };
   let mainBounds: ViewBounds = {x: 0, y: 0, width: width, height: _mainHeight};
   switch (position) {
     case SidePosition.left:

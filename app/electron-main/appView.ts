@@ -8,38 +8,51 @@ import { processEnv } from '../../platform/node/constant';
 const browserViews: Map<ViewZone, BrowserView> = new Map();
 const moduleManager: ModuleManagerInterface = ModuleManager();
 export class AppViews {
-  moduleID: string;
+  mainModuleID: string = 'default';
+  moduleID: string = 'default';
   view: BrowserView;
   sidePosition: SidePosition = SidePosition.left;
   constructor(private win: BrowserWindow) {}
+
   /**
    * 根据模块ID启动app模块的加载
    * @param moduleID
-   * @param load
    */
   create(moduleID: string) {
     this.moduleID = moduleID;
     const module: ModuleInfo = moduleManager.getModule(moduleID, true);
     if (module && module.type === ModuleType.app) {
       let refresh: boolean = false;
-      if (module.isApp && this.moduleID !== module.moduleID) {
-        this.moduleID = module.moduleID;
+      if (module.isApp && this.mainModuleID !== module.moduleID) {
+        this.mainModuleID = module.moduleID;
         this.sidePosition = module.sidePosition;
         refresh = true;
       }
       return this.createAppView(module, refresh);
     }
   }
+
   /**
    * 删除视图
    */
   remove() {
-    if(!this.view) return;
+    if (!this.view) {
+      return;
+    }
     this.view.webContents.closeDevTools();
     this.win.removeBrowserView(this.view);
-    // window.webContents.executeJavaScript(`window.init()`);
     this.view = undefined;
   }
+  
+  rebuildBounds(sideWidth?: number) {
+    if (!this.view) {
+      return;
+    }
+    const windBounds = this.win.getContentBounds();
+    const _bounds: ViewBounds = getViewBounds(ViewZone.main, windBounds.width, windBounds.height, this.sidePosition, sideWidth); 
+    this.view.setBounds(_bounds);
+  }
+
   /**
    * 创建主视图，主要从模块载入文件
    * @param module
@@ -52,16 +65,17 @@ export class AppViews {
       bounds: _bounds,
       partition: `<${module.moduleID}>`,
       preloadPath: path.join(__dirname, '../../', 'platform', 'electron-browser', 'preload.js'),
-      //preloadPath: path.join(process.cwd(), 'platform', 'electron-browser', 'preload.js'),
       preload: module.preload,
-      viewPath: processEnv === 'development' ? 'http://localhost:4200' : `file://${module.main}`,
+      // viewPath: processEnv === 'development' ? 'http://localhost:4200' : `file://${module.main}`,
+      viewPath: module.main_debug ? module.main_debug : module.main,
     }).init(this.win);
-    this.view=_view;
+    this.remove()
+    this.view = _view;
     this.view.webContents.once('did-finish-load', () => {
       _view.setBackgroundColor('#FFF');
     });
     this.view.webContents.once('dom-ready', () => {
-      _view.setBounds(_bounds);
+      this.rebuildBounds();
       _view.webContents.openDevTools();
       require('@electron/remote/main').enable(this.view.webContents);
       //_view.setAutoResize({ width: true });

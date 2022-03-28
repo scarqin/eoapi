@@ -35,6 +35,8 @@ export interface ModuleInfo {
   logo: string;
   // 入口文件
   main: string;
+  // 入口开发调试
+  main_debug?: string;
   // 预加载js文件
   preload?: string;
   // 判断是不是顶层App
@@ -44,7 +46,7 @@ export interface ModuleInfo {
   // 模块对应上层模块ID
   belongs?: Array<string>;
   // 下层关联模块ID集合
-  slideItems?: Array<string>;
+  sideItems?: Array<string>;
   // 下层功能模块ID集合
   featureItems?: Array<string>;
   // 模块路径
@@ -77,5 +79,5 @@ export interface ModuleManagerInterface {
   getModule: (moduleID: string, belongs?: boolean) => ModuleInfo;
   getModules: (belongs?: boolean) => Map<string, ModuleInfo>;
   getAppModuleList: () => Array<ModuleInfo>;
-  getSlideModuleList: (moduleID: string) => Array<ModuleInfo>;
+  getSideModuleList: (moduleID: string) => Array<ModuleInfo>;
 }

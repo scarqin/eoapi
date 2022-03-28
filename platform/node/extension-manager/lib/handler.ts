@@ -46,16 +46,15 @@ export class ModuleHandler {
   info(name: string): ModuleInfo {
     const main: string = resolveModule(name, this.baseDir);
     const baseDir: string = path.dirname(main);
-    console.log(name,path.join(baseDir, 'package.json'),main)
     const moduleInfo: ModuleInfo = readJson(path.join(baseDir, 'package.json')) as ModuleInfo;
     // 这里要加上判断或try catch，避免异常读取不到文件，或格式错误
-    moduleInfo.main = main;
+    moduleInfo.main = `file://${main}`;
     moduleInfo.baseDir = baseDir;
     if (moduleInfo.preload && moduleInfo.preload.length > 0) {
       moduleInfo.preload = path.join(baseDir, moduleInfo.preload);
     }
     if (moduleInfo.logo && moduleInfo.logo.length > 0 && !moduleInfo.logo.startsWith('http')) {
-      moduleInfo.logo = path.join(baseDir, moduleInfo.logo);
+      moduleInfo.logo = 'file://' + path.join(baseDir, moduleInfo.logo);
     }
     return moduleInfo;
   }

@@ -9,6 +9,17 @@ export class CoreViews {
   constructor(private win: BrowserWindow) {
     this.triggleEvent = this.triggleEvent.bind(this);
   }
+  
+  rebuildBounds() {
+    if (!this.view) {
+      return;
+    }
+    const _bounds = this.win.getContentBounds();
+    _bounds.x = 0;
+    _bounds.y = 0;
+    this.view.setBounds(_bounds);
+  }
+
   /**
    * create core module browserview with sidebar/navbar/toolbar
    */

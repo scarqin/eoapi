@@ -75,10 +75,11 @@ export class ModuleManager implements ModuleManagerInterface {
   /**
    * 获取边栏应用列表
    */
-  getSlideModuleList(moduleID: string): Array<ModuleInfo> {
+  getSideModuleList(moduleID: string): Array<ModuleInfo> {
+    console.log(moduleID);
     const output: Array<ModuleInfo> = [];
     const modules: Map<string, ModuleInfo> = this.moduleBelongs();
-    modules.get(moduleID).slideItems?.forEach((_moduleID: string) => {
+    modules.get(moduleID)?.sideItems?.forEach((_moduleID: string) => {
       if (modules.has(_moduleID)) {
         output.push(modules.get(_moduleID));
       }
@@ -147,7 +148,7 @@ export class ModuleManager implements ModuleManagerInterface {
    */
   private moduleBelongs(): Map<string, ModuleInfo> {
     const newModules: Map<string, ModuleInfo> = new Map();
-    const slideItems = new Map();
+    const sideItems = new Map();
     const featureItems = new Map();
     // 绑定默认
     const defaultModule: ModuleInfo = {
@@ -159,12 +160,13 @@ export class ModuleManager implements ModuleManagerInterface {
       moduleName: 'API',
       type: ModuleType.app,
       isApp: true,
-      logo: path.join(__dirname, '../../../../dist/assets/images/icon.png'),
-      main: path.join(__dirname, '../../../../dist/index.html'),
+      logo: 'file://' + path.join(__dirname, '../../../../core/api-manager/browser/dist/assets/images/icon.png'),
+      main: 'file://' + path.join(__dirname, '../../../../core/api-manager/browser/dist/index.html'),
+      main_debug: 'http://localhost:4200',
     };
     // 加入系统默认模块做关联
     newModules.set(defaultModule.moduleID, defaultModule);
-    slideItems.set(defaultModule.moduleID, [defaultModule.moduleID]);
+    sideItems.set(defaultModule.moduleID, [defaultModule.moduleID]);
     this.modules?.forEach((module: ModuleInfo) => {
       const belongs: string[] = module.belongs || [defaultModule.moduleID];
       // 如果包含自己则是主应用
@@ -174,10 +176,10 @@ export class ModuleManager implements ModuleManagerInterface {
       belongs.forEach((belong: string) => {
         let _modules: string[];
         if (module.type === ModuleType.app) {
-          if (!slideItems.has(belong)) {
+          if (!sideItems.has(belong)) {
             _modules = [];
           } else {
-            _modules = slideItems.get(belong);
+            _modules = sideItems.get(belong);
           }
           // 如果指定上层是自己，自己放最前面
           if (module.moduleID === belong) {
@@ -185,7 +187,7 @@ export class ModuleManager implements ModuleManagerInterface {
           } else {
             _modules.push(module.moduleID);
           }
-          slideItems.set(belong, _modules);
+          sideItems.set(belong, _modules);
         } else if (module.type === ModuleType.feature) {
           if (!featureItems.has(belong)) {
             _modules = [];
@@ -197,10 +199,10 @@ export class ModuleManager implements ModuleManagerInterface {
         }
       });
     });
-    slideItems?.forEach((value: Array<string>, key: string) => {
+    sideItems?.forEach((value: Array<string>, key: string) => {
       const _current: ModuleInfo = newModules.get(key);
       if (_current.isApp) {
-        _current.slideItems = value;
+        _current.sideItems = value;
         newModules.set(key, _current);
       }
     });

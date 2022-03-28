@@ -23,18 +23,14 @@ if (apiAccessRules.includes('getModules')) {
     return ipcRenderer.sendSync('eo-sync', { action: 'getModules' });
   };
 }
-// 获取App应用列表
-if (apiAccessRules.includes('getAppModuleList')) {
-  window.eo.getAppModuleList = () => {
-    return ipcRenderer.sendSync('eo-sync', { action: 'getAppModuleList' });
-  };
-}
+// 获取App应用列
+window.eo.getAppModuleList = () => {
+  return ipcRenderer.sendSync('eo-sync', { action: 'getAppModuleList' });
+};
 // 获取边栏应用列表
-if (apiAccessRules.includes('getSlideModuleList')) {
-  window.eo.getSlideModuleList = () => {
-    return ipcRenderer.sendSync('eo-sync', { action: 'getSlideModuleList' });
-  };
-}
+window.eo.getSideModuleList = () => {
+  return ipcRenderer.sendSync('eo-sync', { action: 'getSideModuleList' });
+};
 // Hook请求返回
 if (apiAccessRules.includes('hook')) {
   window.eo.hook = (data) => {
@@ -58,6 +54,9 @@ window.eo.toogleViewZIndex = (visible) => {
       action: visible ? 'show' : 'hide',
     },
   });
+};
+window.eo.autoResize = (sideWidth) => {
+  ipcRenderer.send('eo-sync', { action: 'autoResize', data: { sideWidth : sideWidth} });
 };
 window.eo.getModules = () => {
   return ipcRenderer.sendSync('eo-sync', { action: 'getModules' });

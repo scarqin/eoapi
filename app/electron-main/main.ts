@@ -11,7 +11,6 @@ import { processEnv } from '../../platform/node/constant';
 import { proxyOpenExternal } from '../../shared/common/browserView';
 import { deleteFile, readJson } from '../../shared/node/file';
 import { STORAGE_TEMP as storageTemp } from '../../shared/common/constant';
-import { timeout } from 'rxjs';
 let win: BrowserWindow = null;
 export const subView = {
   appView: null,
@@ -59,11 +58,13 @@ function createWindow(): BrowserWindow {
     mainRemote.enable(win.webContents);
     //remove origin view
     for (var i in subView) {
-      if (!subView[i]) break;
+      if (!subView[i]) {
+        continue;
+      }
       subView[i].remove();
     }
-    subView.mainView = new CoreViews(win);
     subView.appView = new AppViews(win);
+    subView.mainView = new CoreViews(win);
     subView.mainView.create();
     subView.appView.create('default');
   });
@@ -77,7 +78,22 @@ function createWindow(): BrowserWindow {
     win = null;
   });
 
+  // resize 监听，改变bounds
+  win.on('resize', () => resize());
+
   return win;
+}
+
+/**
+ * 重置View的Bounds
+ */
+function resize(sideWidth?: number) {
+  for (var i in subView) {
+    if (!subView[i]) {
+      continue;
+    }
+    subView[i].rebuildBounds(sideWidth);
+  }
 }
 
 try {
@@ -100,9 +116,7 @@ try {
       app.quit();
     }
   });
-
-  // resize 监听，改变browserview bounds
-
+  
   app.on('activate', () => {
     // On OS X it's common to re-create a window in the app when the
     // dock icon is clicked and there are no other windows open.
@@ -173,23 +187,24 @@ try {
       returnValue = moduleManager.getModules(true);
     } else if (arg.action === 'getAppModuleList') {
       returnValue = moduleManager.getAppModuleList();
-    } else if (arg.action === 'getSlideModuleList') {
-      returnValue = moduleManager.getSlideModuleList(subView.appView.view.moduleID);
+    } else if (arg.action === 'getSideModuleList') {
+      returnValue = moduleManager.getSideModuleList(subView.appView.mainModuleID);
     } else if (arg.action === 'getSidePosition') {
-      if(!subView.appView.view) return;
-      returnValue = subView.appView.view.sidePosition;
+      returnValue = subView.appView.sidePosition;
     } else if (arg.action === 'hook') {
       returnValue = 'hook返回';
     } else if (arg.action === 'openApp') {
       if (arg.data.moduleID) {
         // 如果要打开是同一app，忽略
-        if (subView.appView.view.moduleID === arg.data.moduleID) {
+        if (subView.appView.moduleID === arg.data.moduleID) {
           return;
         }
-        subView.appView = new AppViews(win);
+        // subView.appView = new AppViews(win);
         subView.appView.create(arg.data.moduleID);
       }
       returnValue = 'view id';
+    } else if (arg.action === 'autoResize') {
+      resize(arg.data.sideWidth);
     } else if (arg.action === 'openModal') {
       console.log('openModal');
       subView.mainView.view.webContents.send('connect-main', { action: 'openModal' });
