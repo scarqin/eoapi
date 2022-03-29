@@ -10,10 +10,10 @@
       ></i>
       <div class="flex flex-col flex-1">
         <div class="flex flex-col">
-          <span class="text-lg mb-2">插件名称</span>
-          <span>作者: {author}</span>
+          <span class="text-lg mb-2">{{ pluginDetail.name }}</span>
+          <span>作者: {{ pluginDetail.author }}</span>
           <span class="mb-4">Tags: {Tags}</span>
-          <p class="w-full h-20">desc</p>
+          <p class="w-full h-20">{{ pluginDetail.description }}</p>
         </div>
         <div class="flex">
           <div class="flex items-center">
@@ -34,13 +34,26 @@
 </template>
 
 <script setup>
-import { useRouter } from "vue-router";
+import { ref, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import { getDetail } from '../http';
 
+const pluginDetail = ref({});
 const router = useRouter();
+const route = useRoute();
 
 const handleBack = () => {
   router.go(-1);
 };
+
+onMounted(async () => {
+  const name = route.query.name || '';
+  const [data, err] = await getDetail(name);
+  if (err) {
+    return;
+  }
+  pluginDetail.value = data;
+});
 </script>
 <style lang="stylus" scoped>
 .ant-btn-dangerous.ant-btn-primary {

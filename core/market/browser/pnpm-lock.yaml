@@ -12,6 +12,7 @@ specifiers:
   core-js: ^3.6.5
   eslint: ^7.32.0
   eslint-plugin-vue: ^8.4.0
+  ky: ^0.30.0
   less-loader: ^6.0.0
   lodash: ^4.17.21
   stylus: ^0.56.0
@@ -24,6 +25,7 @@ dependencies:
   '@ant-design/icons-vue': 6.1.0_vue@3.2.31
   ant-design-vue: 2.2.8_4f726de02e89ff745196f225ebb1bbcf
   core-js: 3.21.1
+  ky: 0.30.0
   lodash: 4.17.21
   vue: 3.2.31
   vue-router: 4.0.14_vue@3.2.31
@@ -5182,7 +5184,7 @@ packages:
     dev: true
 
   /image-size/0.5.5:
-    resolution: {integrity: sha512-6TDAlDPZxUFCv+fuOkIoXT/V/f3Qbq8e37p+YOiYrUv3v9cc3/6x78VdfPgFVaB9dZYeLUfKgHRebpkm/oP2VQ==}
+    resolution: {integrity: sha1-Cd/Uq50g4p6xw+gLiZA3jfnjy5w=}
     engines: {node: '>=0.10.0'}
     hasBin: true
     requiresBuild: true
@@ -5804,6 +5806,11 @@ packages:
     resolution: {integrity: sha512-dcS1ul+9tmeD95T+x28/ehLgd9mENa3LsvDTtzm3vyBEO7RPptvAD+t44WVXaUjTBRcrpFeFlC8WCruUR456hw==}
     engines: {node: '>=0.10.0'}
     dev: true
+
+  /ky/0.30.0:
+    resolution: {integrity: sha512-X/u76z4JtDVq10u1JA5UQfatPxgPaVDMYTrgHyiTpGN2z4TMEJkIHsoSBBSg9SWZEIXTKsi9kHgiQ9o3Y/4yog==}
+    engines: {node: '>=12'}
+    dev: false
 
   /launch-editor-middleware/2.3.0:
     resolution: {integrity: sha512-GJR64trLdFFwCoL9DMn/d1SZX0OzTDPixu4mcfWTShQ4tIqCHCGvlg9fOEYQXyBlrSMQwylsJfUWncheShfV2w==}

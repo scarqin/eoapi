@@ -28,48 +28,46 @@
     >
       <i
         class="block w-20 h-20 bg-cover bg-center bg-no-repeat"
-        :style="{ backgroundImage: `url(${it.logo})` }"
+        :style="{ backgroundImage: `url(${require('../assets/logo.png')})` }"
       ></i>
       <span>{{ it.name }}</span>
       <span>{{ it.author }}</span>
-      <div class="desc">{{ it.desc }}</div>
+      <div class="desc">{{ it.description }}</div>
     </div>
   </div>
 </template>
 <script setup>
-import { ref, watch, onMounted } from "vue";
-import { useRouter, useRoute } from "vue-router";
-import { SearchOutlined } from "@ant-design/icons-vue";
+import { ref, watch, onMounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import { SearchOutlined } from '@ant-design/icons-vue';
+import { getList } from '../http';
 
-let search = ref("");
+let search = ref('');
 const renderList = ref([]);
 const router = useRouter();
 const route = useRoute();
 
-const handleClick = () => {
-  router.push("/plugin-detail");
+const handleClick = ({ name }) => {
+  router.push({ path: '/plugin-detail', query: { name } });
 };
 
-const queryPlugin = (type = "all") => {
-  console.log("type", type);
-  return Array(17)
-    .fill(0)
-    .map(() => ({
-      logo: require("../assets/logo.png"),
-      name: "插件名称",
-      author: "Eoapi",
-      desc: "这段文字最多显示不超过3行，否则省略号显示。鼠标hover的时候可以显示完整的信息。这段文字最多显示不超过3行，否则省略号显示……鼠标hover的时候可以显示完整的信息。",
-    }));
+const queryPlugin = async (type = 'all') => {
+  console.log('=>', type);
+  const [res, err] = await getList();
+  if (err) {
+    return;
+  }
+  return res;
 };
 
-onMounted(() => {
-  const type = route.query.type || "";
-  renderList.value = queryPlugin(type);
+onMounted(async () => {
+  const type = route.query.type || '';
+  renderList.value = await queryPlugin(type);
 });
 watch(
   () => route.query,
-  ({ type }) => {
-    renderList.value = queryPlugin(type);
+  async ({ type }) => {
+    renderList.value = await queryPlugin(type);
   }
 );
 </script>
