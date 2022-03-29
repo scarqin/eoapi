@@ -566,10 +566,15 @@ export interface StorageInterface {
 
 export type StorageItem = Project | Environment | Group | ApiData | ApiTestHistory;
 
-export interface StorageListenArgs {
+export interface StorageHandleArgs {
   type?: StorageProcessType;
   action: string;
-  params: object;
+  params: Array<any>;
+}
+
+export interface StorageHandleResult {
+  status: StorageHandleStatus;
+  data: any;
 }
 
 export enum StorageHandleStatus {

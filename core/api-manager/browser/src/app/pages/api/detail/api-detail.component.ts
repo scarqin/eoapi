@@ -1,8 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
-import { storage, ApiData, ApiBodyType, JsonRootType } from '@eoapi/storage';
+import { ApiData, ApiBodyType, JsonRootType, StorageHandleResult, StorageHandleStatus } from '../../../../../../../../platform/browser/IndexedDB';
 import { treeToListHasLevel } from '../../../utils/tree/tree.utils';
 import { reverseObj } from '../../../utils';
+import { StorageService } from '../../../shared/services/storage';
 
 export interface TreeNodeInterface {
   key?: string;
@@ -25,7 +26,7 @@ export class ApiDetailComponent implements OnInit {
     BODY_TYPE: reverseObj(ApiBodyType),
     JSON_ROOT_TYPE: reverseObj(JsonRootType)
   };
-  constructor(private route: ActivatedRoute) {
+  constructor(private route: ActivatedRoute, private storage: StorageService) {
   }
   ngOnInit(): void {
     this.route.queryParams.subscribe((params) => {
@@ -37,13 +38,14 @@ export class ApiDetailComponent implements OnInit {
     });
   }
   getApiByUuid(id: number) {
-    storage.apiDataLoad(id).subscribe((result: ApiData) => {
+    const result: StorageHandleResult = this.storage.run('apiDataLoad', [id]);
+    if (result.status === StorageHandleStatus.success) {
       ['requestBody', 'responseBody'].forEach((tableName) => {
-        if (['xml', 'json'].includes(result[`${tableName}Type`])) {
-          result[tableName] = treeToListHasLevel(result[tableName]);
+        if (['xml', 'json'].includes(result.data[`${tableName}Type`])) {
+          result.data[tableName] = treeToListHasLevel(result.data[tableName]);
         }
       });
-      this.apiData = result;
-    });
+      this.apiData = result.data;
+    }
   }
 }

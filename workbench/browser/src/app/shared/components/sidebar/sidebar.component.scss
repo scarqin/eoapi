@@ -24,6 +24,9 @@
     // background-color: var(--SIDEBAR_BG_HOVER);
     // color: var(--TEXT_ACTIVE);
   }
+  img {
+    width: 25px;
+  }
 }
 .sidebar_item_active {
   background-color: var(--SEC_BG);

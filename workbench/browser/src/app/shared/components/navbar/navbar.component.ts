@@ -1,4 +1,4 @@
-import { Component, OnInit, ɵɵsetComponentScope } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { ElectronService } from '../../../core/services';
 import { ModuleInfo } from '../../../../../../../platform/node/extension-manager'; 
 @Component({
@@ -8,7 +8,7 @@ import { ModuleInfo } from '../../../../../../../platform/node/extension-manager
 })
 export class NavbarComponent implements OnInit {
   isMaximized = false;
-  isElectron: boolean = true;
+  isElectron: boolean = false;
   OS_TYPE = navigator.platform.toLowerCase();
   modules: Map<string, ModuleInfo>;
   constructor(private electron: ElectronService) {
@@ -35,7 +35,7 @@ export class NavbarComponent implements OnInit {
   }
   ngOnInit(): void {
     if (this.isElectron) {
-      this.modules = window.eo.getModules();
+      this.modules = window.eo.getAppModuleList();
     } else {
       this.modules = new Map();
     }

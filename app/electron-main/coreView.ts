@@ -9,6 +9,17 @@ export class CoreViews {
   constructor(private win: BrowserWindow) {
     this.triggleEvent = this.triggleEvent.bind(this);
   }
+  
+  rebuildBounds() {
+    if (!this.view) {
+      return;
+    }
+    const _bounds = this.win.getContentBounds();
+    _bounds.x = 0;
+    _bounds.y = 0;
+    this.view.setBounds(_bounds);
+  }
+
   /**
    * create core module browserview with sidebar/navbar/toolbar
    */
@@ -19,13 +30,16 @@ export class CoreViews {
     this.view = new BrowserViewInstance({
       bounds: _bounds,
       partition: '<core-module>',
-      //preloadPath: path.join(process.cwd(), 'workbench', 'electron-browser', 'preload.js'),
-      preloadPath: path.join(__dirname, '../../', 'workbench', 'electron-browser', 'preload.js'),
+      preloadPath: path.join(__dirname, '../../', 'platform', 'electron-browser', 'preload.js'),
       viewPath:
         processEnv === 'development'
           ? 'http://localhost:4201'
           : `file://${path.join(process.cwd(), 'workbench', 'browser', 'dist', 'index.html')}`,
     }).init(this.win);
+
+    this.view.webContents.once('dom-ready', () => {
+      require('@electron/remote/main').enable(this.view.webContents);
+    });
     this.watch();
   }
   watch() {

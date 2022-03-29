@@ -2,7 +2,8 @@ import { Component, OnInit, Inject, LOCALE_ID, EventEmitter, Input, Output } fro
 import { formatDate } from '@angular/common';
 import { ApiTestService } from '../api-test.service';
 import { NzMessageService } from 'ng-zorro-antd/message';
-import { storage, ApiTestHistory, ApiTestHistoryFrame } from '@eoapi/storage';
+import { StorageService } from '../../../../shared/services/storage';
+import { ApiTestHistory, ApiTestHistoryFrame, StorageHandleResult, StorageHandleStatus } from '../../../../../../../../../platform/browser/IndexedDB';
 
 @Component({
   selector: 'eo-api-test-history',
@@ -17,39 +18,43 @@ export class ApiTestHistoryComponent implements OnInit {
   constructor(
     @Inject(LOCALE_ID) private locale: string,
     private nzMessageService: NzMessageService,
-    private apiTest: ApiTestService
+    private apiTest: ApiTestService,
+    private storage: StorageService
   ) {
     this.initListConf();
   }
 
   add(history: ApiTestHistoryFrame,apiID) {
-    storage.apiTestHistoryCreate({
-        projectID: 1,
-        apiDataID: apiID,
-        ...history,
-      })
-      .subscribe({
-        next: (item: ApiTestHistory) => {
-          this.parseItem(item);
-          this.model.unshift(item);
-        },
-        error: console.error,
-      });
+    const result: StorageHandleResult = this.storage.run('apiTestHistoryCreate', [{
+      projectID: 1,
+      apiDataID: apiID,
+      ...history,
+    }]);
+    if (result.status === StorageHandleStatus.success) {
+      this.parseItem(result.data);
+      this.model.unshift(result.data);
+    } else {
+      console.error(result.data);
+    }
   }
+
   deleteAll() {
-    storage.apiTestHistoryBulkRemove(this.model.map((val) => val.uuid)).subscribe({
-      next: (res) => {
-        this.model = [];
-        this.nzMessageService.success('删除成功');
-      },
-      error: console.error,
-    });
+    const result: StorageHandleResult = this.storage.run('apiTestHistoryBulkRemove', [this.model.map((val) => val.uuid)]);
+    if (result.status === StorageHandleStatus.success) {
+      this.model = [];
+      this.nzMessageService.success('删除成功');
+    } else {
+      this.nzMessageService.success('删除失败');
+      console.error(result.data);
+    }
   }
+
   ngOnChanges(changes) {
     if (changes && changes.apiID && changes.apiID.currentValue !== undefined) {
       this.getList();
     }
   }
+
   ngOnInit(): void {}
   private initListConf() {
     this.listConf = {
@@ -102,26 +107,33 @@ export class ApiTestHistoryComponent implements OnInit {
       ],
     };
   }
+
   private delete(inArg) {
-    storage.apiTestHistoryRemove(inArg.item.uuid).subscribe({
-      next: (res) => {
-        this.model.splice(inArg.$index, 1);
-        this.nzMessageService.success('删除成功');
-      },
-      error: console.error,
-    });
+    const result: StorageHandleResult = this.storage.run('apiTestHistoryRemove', [inArg.item.uuid]);
+    if (result.status === StorageHandleStatus.success) {
+      this.model.splice(inArg.$index, 1);
+      this.nzMessageService.success('删除成功');
+    } else {
+      this.nzMessageService.success('删除失败');
+      console.error(result.data);
+    }
   }
+
   private getList() {
-    storage.apiTestHistoryLoadAllByApiDataID(this.apiID).subscribe({
-      next: (res) => {
-        res.forEach((val: any) => {
-          this.parseItem(val);
-        });
-        this.model = res || [];
-      },
-      error: console.error,
-    });
+    if (!this.apiID) {
+      return;
+    }
+    const result: StorageHandleResult = this.storage.run('apiTestHistoryLoadAllByApiDataID', [this.apiID]);
+    if (result.status === StorageHandleStatus.success) {
+      result.data.forEach((val: any) => {
+        this.parseItem(val);
+      });
+      this.model = result.data || [];
+    } else {
+      console.error(result.data); 
+    }
   }
+
   private parseItem(item) {
     item.codeClass = this.apiTest.getHTTPStatus(item.response.statusCode).fontClass;
     item.testTime = formatDate(item.createdAt, 'YYYY-MM-dd HH:mm:ss', this.locale);

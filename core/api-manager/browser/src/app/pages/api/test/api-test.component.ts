@@ -3,7 +3,7 @@ import { ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Select } from '@ngxs/store';
 
-import { storage, ApiData, RequestMethod, RequestProtocol } from '@eoapi/storage';
+import { ApiData, RequestMethod, RequestProtocol, StorageHandleResult, StorageHandleStatus } from '../../../../../../../../platform/browser/IndexedDB';
 import { MessageService } from '../../../shared/services/message';
 
 import { interval, Subscription, Observable, of, Subject } from 'rxjs';
@@ -18,6 +18,7 @@ import { objectToArray } from '../../../utils';
 
 import { EnvState } from '../../../shared/store/env.state';
 import { ApiParamsNumPipe } from '../../../shared/pipes/api-param-num.pipe';
+import { StorageService } from '../../../shared/services/storage';
 
 @Component({
   selector: 'eo-api-test',
@@ -54,7 +55,8 @@ export class ApiTestComponent implements OnInit, OnDestroy {
     private apiTest: ApiTestService,
     private apiTab: ApiTabService,
     private testServerService: TestServerService,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private storage: StorageService
   ) {
     this.testServer = this.testServerService.getService();
     this.testServer.init((message) => {
@@ -90,10 +92,11 @@ export class ApiTestComponent implements OnInit, OnDestroy {
     this.testResult = result.response;
   }
   getApi(id) {
-    storage.apiDataLoad(id).subscribe((result: ApiData) => {
-      this.apiData = this.apiTest.getTestDataFromApi(result);
+    const result: StorageHandleResult = this.storage.run('apiDataLoad', [id]);
+    if (result.status === StorageHandleStatus.success) {
+      this.apiData = this.apiTest.getTestDataFromApi(result.data);
       this.validateForm.patchValue(this.apiData);
-    });
+    }
   }
   saveTestDataToApi() {
     let apiData = this.apiTest.getApiFromTestData({

@@ -1,11 +1,12 @@
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { Store } from '@ngxs/store';
-import { storage, Environment } from '@eoapi/storage';
+import { StorageHandleResult, StorageHandleStatus } from '../../../../../../../platform/browser/IndexedDB';
 import { ElectronService } from '../../core/services';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { uuid as uid } from '../../utils/index';
 import { EoTableComponent } from '../../eoui/table/eo-table/eo-table.component';
 import { Change } from '../../shared/store/env.state';
+import { StorageService } from '../../shared/services/storage';
 
 import { Subject } from 'rxjs';
 
@@ -31,6 +32,7 @@ export class EnvComponent implements OnInit, OnDestroy {
   private destroy$: Subject<void> = new Subject<void>();
   constructor(
     private electron: ElectronService,
+    private storage: StorageService,
     private message: NzMessageService,
     private store: Store
   ) {}
@@ -58,22 +60,20 @@ export class EnvComponent implements OnInit, OnDestroy {
   }
 
   getAllEnv() {
-    storage.environmentLoadAllByProjectID(1).subscribe((result: Array<Environment>) => {
-      if (result.length === 0) {
-        this.envList = [];
-        this.handleAddEnv(null);
-        return;
-      }
-      this.envList = result;
-      this.handleSwitchEnv(result[0].uuid);
-    });
+    const result: StorageHandleResult = this.storage.run('environmentLoadAllByProjectID', [1]);
+    if (result.status !== StorageHandleStatus.success) {
+      this.envList = [];
+      this.handleAddEnv(null);
+      return;
+    }
+    this.envList = result.data;
+    this.handleSwitchEnv(result.data[0].uuid);
   }
 
   handleDeleteEnv(uuid: string) {
     // * delete env in menu on left sidebar
-    storage.environmentRemove(uuid).subscribe((result: boolean) => {
-      this.getAllEnv();
-    });
+    const result: StorageHandleResult = this.storage.run('environmentRemove', [uuid]);
+    this.getAllEnv();
   }
   handleDeleteParams(index) {
     // * delete params in table
@@ -82,9 +82,10 @@ export class EnvComponent implements OnInit, OnDestroy {
   }
   handleSwitchEnv(uuid) {
     // * switch env in menu on left sidebar
-    storage.environmentLoad(uuid).subscribe((result: Environment) => {
-      this.envInfo = result;
-    });
+    const result: StorageHandleResult = this.storage.run('environmentLoad', [uuid]);
+    if (result.status === StorageHandleStatus.success) {
+      this.envInfo = result.data;
+    }
     this.activeUuid = uuid;
   }
 
@@ -108,18 +109,25 @@ export class EnvComponent implements OnInit, OnDestroy {
     }
     const data = parameters.filter((it) => it.name && it.value);
     if (uuid) {
-      storage.environmentUpdate({ ...other, name, parameters: data },uuid).subscribe((result: Environment) => {
+      const result: StorageHandleResult = this.storage.run('environmentUpdate', [{ ...other, name, parameters: data }, uuid]);
+      if (result.status === StorageHandleStatus.success) {
         this.message.success('编辑成功');
         this.getAllEnv();
-      });
+      } else {
+        this.message.success('编辑失败');
+      }
+    } else {
+      const result: StorageHandleResult = this.storage.run('environmentCreate', [{ ...other, name, parameters: data }]);
+      if (result.status === StorageHandleStatus.success) {
+        this.message.success('新增成功');
+        this.envInfo = result.data;
+        this.activeUuid = Number(result.data.uuid);
+        this.handleSwitchEnv(result.data.uuid);
+        this.getAllEnv();
+      } else {
+        this.message.success('新增失败');
+      }
     }
-    storage.environmentCreate({ ...other, name, parameters: data }).subscribe((result: Environment) => {
-      this.message.success('新增成功');
-      this.envInfo = result;
-      this.activeUuid = Number(result.uuid);
-      this.handleSwitchEnv(result.uuid);
-      this.getAllEnv();
-    });
   }
 
   handleCancel(): void {
@@ -145,12 +153,11 @@ export class EnvComponent implements OnInit, OnDestroy {
       this.store.dispatch(new Change(null));
       return;
     }
-    storage.environmentLoadAllByProjectID(1).subscribe((result: Array<Environment>) => {
-      if (result.length === 0) {
-        return;
-      }
-      const data = result.find((val) => val.uuid === Number(uuid));
-      this.store.dispatch(new Change(data));
-    });
+    const result: StorageHandleResult = this.storage.run('environmentLoadAllByProjectID', [1]);
+    if (result.status !== StorageHandleStatus.success) {
+      return;
+    }
+    const data = result.data.find((val) => val.uuid === Number(uuid));
+    this.store.dispatch(new Change(data));
   }
 }

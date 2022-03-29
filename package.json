@@ -5,9 +5,11 @@
   "private": true,
   "scripts": {
     "postinstall": "npm-run-all --serial install:*",
-    "start": "npm-run-all  -p startall electron:serve",
+    "start": "npm-run-all -p startall electron:serve",
     "startall": "npm-run-all -p start:*",
-    "install-stash:api-manager": "cd core/api-manager/browser&&npm ci",
+    "install:app": "cd app/browser&&npm install",
+    "start:app": "cd app/browser&&npm run build",
+    "install:api-manager": "cd core/api-manager/browser&&npm ci",
     "start:api-manager": "cd core/api-manager/browser&&npm start",
     "install:workbench": "cd workbench/browser&&npm install",
     "start:workbench": "cd workbench/browser&&npm start",

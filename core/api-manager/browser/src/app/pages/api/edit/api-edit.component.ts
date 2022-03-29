@@ -8,8 +8,9 @@ import { NzTreeSelectComponent } from 'ng-zorro-antd/tree-select';
 import { Subject } from 'rxjs';
 import { debounceTime, take, takeUntil, pairwise, filter } from 'rxjs/operators';
 import { MessageService } from '../../../shared/services/message';
+import { StorageService } from '../../../shared/services/storage';
 
-import { storage, Group, ApiData, RequestProtocol, RequestMethod, ApiEditRest } from '@eoapi/storage';
+import { Group, ApiData, RequestProtocol, RequestMethod, ApiEditRest, StorageHandleResult, StorageHandleStatus } from '../../../../../../../../platform/browser/IndexedDB';
 import { ApiTabService } from '../tab/api-tab.service';
 
 import { objectToArray } from '../../../utils';
@@ -38,22 +39,24 @@ export class ApiEditComponent implements OnInit, OnDestroy {
     private fb: FormBuilder,
     private message: NzMessageService,
     private messageService: MessageService,
-    private apiTab: ApiTabService
+    private apiTab: ApiTabService,
+    private storage: StorageService
   ) {}
   getApiGroup() {
     this.groups = [];
-    storage.groupLoadAllByProjectID(1).subscribe((items: Array<Group>) => {
-      const treeItems: any = [
-        {
-          title: '根目录',
-          //!actually is 0,but 0 will hidden in nz component,so use -1 replace 0
-          key: '-1',
-          weight: 0,
-          parentID: '0',
-          isLeaf: false,
-        },
-      ];
-      items.forEach((item) => {
+    const treeItems: any = [
+      {
+        title: '根目录',
+        //!actually is 0,but 0 will hidden in nz component,so use -1 replace 0
+        key: '-1',
+        weight: 0,
+        parentID: '0',
+        isLeaf: false,
+      },
+    ];
+    const result: StorageHandleResult = this.storage.run('groupLoadAllByProjectID', [1]);
+    if (result.status === StorageHandleStatus.success) {
+      result.data.forEach((item: Group) => {
         delete item.updatedAt;
         treeItems.push({
           title: item.name,
@@ -64,21 +67,22 @@ export class ApiEditComponent implements OnInit, OnDestroy {
         });
       });
       treeItems.sort((a, b) => a.weight - b.weight);
-      listToTree(treeItems, this.groups, '0');
-      this.afterInitGroup();
-    });
+    }
+    listToTree(treeItems, this.groups, '0');
+    this.afterInitGroup();
   }
   getApi(id) {
-    storage.apiDataLoad(id).subscribe((result: ApiData) => {
+    const result: StorageHandleResult =  this.storage.run('apiDataLoad', [id]);
+    if (result.status === StorageHandleStatus.success) {
       ['requestBody', 'responseBody'].forEach((tableName) => {
-        if (['xml', 'json'].includes(result[`${tableName}Type`])) {
-          result[tableName] = treeToListHasLevel(result[tableName]);
+        if (['xml', 'json'].includes(result.data[`${tableName}Type`])) {
+          result.data[tableName] = treeToListHasLevel(result.data[tableName]);
         }
       });
-      this.apiData = result;
+      this.apiData = result.data;
       this.changeGroupID$.next(this.apiData.groupID);
       this.validateForm.patchValue(this.apiData);
-    });
+    }
   }
   saveApi() {
     //manual set dirty in case user submit directly without edit
@@ -249,17 +253,21 @@ export class ApiEditComponent implements OnInit, OnDestroy {
 
   private editApi(formData) {
     if (formData.uuid) {
-      storage.apiDataUpdate(formData, this.apiData.uuid).subscribe(
-        (result: ApiData) => {
-          this.message.success('编辑成功');
-          this.messageService.send({ type: 'editApi', data: result });
-        });
+      const result: StorageHandleResult = this.storage.run('apiDataUpdate', [formData, this.apiData.uuid]);
+      if (result.status === StorageHandleStatus.success) {
+        this.message.success('编辑成功');
+        this.messageService.send({ type: 'editApi', data: result.data });
+      } else {
+        this.message.success('编辑失败');
+      }
     } else {
-      storage.apiDataCreate(formData).subscribe(
-        (result: ApiData) => {
-          this.message.success('新增成功');
-          this.messageService.send({ type: 'addApi', data: result });
-        });
+      const result: StorageHandleResult = this.storage.run('apiDataCreate', [formData]);
+      if (result.status === StorageHandleStatus.success) {
+        this.message.success('新增成功');
+        this.messageService.send({ type: 'addApi', data: result.data });
+      } else {
+        this.message.success('新增失败');
+      }
     }
   }
 }

@@ -1,12 +1,14 @@
 import { Injectable } from '@angular/core';
 import { NzModalService } from 'ng-zorro-antd/modal';
-import { storage, ApiData } from '@eoapi/storage';
+import { ApiData, StorageHandleResult, StorageHandleStatus } from '../../../../../../../platform/browser/IndexedDB';
 import { MessageService } from '../../shared/services/message';
+import { StorageService } from '../../shared/services/storage';
 @Injectable()
 export class ApiService {
   constructor(
     private modalService: NzModalService,
-    private messageService: MessageService
+    private messageService: MessageService,
+    private storage: StorageService
   ) {}
 
   copy(apiData: ApiData): void {
@@ -24,15 +26,17 @@ export class ApiService {
         apiData.name.length > 50 ? apiData.name.slice(0, 50) + '...' : apiData.name
       }</strong> 吗？删除后不可恢复！`,
       nzOnOk: () => {
-        storage.apiDataRemove(apiData.uuid).subscribe((result: boolean) => {
+        const result: StorageHandleResult = this.storage.run('apiDataRemove', [apiData.uuid]);
+        if (result.status === StorageHandleStatus.success) {
           this.messageService.send({ type: 'deleteApi', data: { uuid: apiData.uuid } });
-        });
+        }
       },
     });
   }
   bulkDelete(apis) {
-    storage.apiDataBulkRemove(apis).subscribe((result) => {
+    const result: StorageHandleResult = this.storage.run('apiDataBulkRemove', [apis]);
+    if (result.status === StorageHandleStatus.success) {
       this.messageService.send({ type: 'bulkDeleteApi', data: { uuids: apis } });
-    });
+    }
   }
 }

@@ -1,5 +1,5 @@
 import { whatType, whatTextType } from '..';
-import { ApiBodyType, JsonRootType } from '@eoapi/storage';
+import { ApiBodyType, JsonRootType } from '../../../../../../../platform/browser/IndexedDB';
 import { flatData } from '../tree/tree.utils';
 
 export const isXML = (data) => {

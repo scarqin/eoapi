@@ -1,8 +1,9 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { storage, Group } from '@eoapi/storage';
+import { Group, StorageHandleResult, StorageHandleStatus } from '../../../../../../../../../platform/browser/IndexedDB';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { NzModalRef } from 'ng-zorro-antd/modal';
 import { MessageService } from '../../../../shared/services/message';
+import { StorageService } from '../../../../shared/services/storage';
 import { GroupApiDataModel, GroupTreeItem } from '../../../../shared/models';
 
 @Component({
@@ -22,6 +23,7 @@ export class ApiGroupEditComponent implements OnInit {
     private fb: FormBuilder,
     private messageService: MessageService,
     private modalRef: NzModalRef,
+    private storage: StorageService
   ) { }
 
   ngOnInit(): void {
@@ -60,21 +62,23 @@ export class ApiGroupEditComponent implements OnInit {
   }
 
   create(): void {
-    storage.groupCreate(this.group).subscribe((data: Group) => {
+    const result: StorageHandleResult = this.storage.run('groupCreate', [this.group]);
+    if (result.status === StorageHandleStatus.success) {
       this.modalRef.destroy();
-      this.messageService.send({ type: 'updateGroupSuccess', data: { group: data } });
-    }, error => {
-      console.log(error);
-    });
+      this.messageService.send({ type: 'updateGroupSuccess', data: { group: result.data } });
+    } else {
+      console.log(result.data);
+    }
   }
 
   update(): void {
-    storage.groupUpdate(this.group, this.group.uuid).subscribe((data: Group) => {
+    const result: StorageHandleResult = this.storage.run('groupUpdate', [this.group, this.group.uuid]);
+    if (result.status === StorageHandleStatus.success) {
       this.modalRef.destroy();
-      this.messageService.send({ type: 'updateGroupSuccess', data: { group: data } });
-    }, error => {
-      console.log(error);
-    });
+      this.messageService.send({ type: 'updateGroupSuccess', data: { group: result.data } });
+    } else {
+      console.log(result.data);
+    }
   }
 
   /**
@@ -103,10 +107,11 @@ export class ApiGroupEditComponent implements OnInit {
     const data: GroupApiDataModel = { group: [this.group.uuid], api: [] };
     this.getChildrenFromTree(this.treeItems, data, `group-${this.group.uuid}`);
     this.modalRef.destroy();
-    storage.groupBulkRemove(data.group).subscribe((result) => {
-      if (data.api.length) return;
-      this.messageService.send({ type: 'updateGroupSuccess', data: {} });
-    });
+    const result: StorageHandleResult = this.storage.run('groupBulkRemove', [data.group]);
+    if (result.status !== StorageHandleStatus.success) {
+      return;
+    }
+    this.messageService.send({ type: 'updateGroupSuccess', data: {} });
     //delete group api
     if (data.api.length > 0) {
       this.messageService.send({ type: 'gotoBulkDeleteApi', data: { uuids: data.api } });
