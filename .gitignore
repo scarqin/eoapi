@@ -8,6 +8,7 @@ dist/
 /release
 *.js
 *.js.map
+!core/market/browser/**/*.js
 
 # dependencies
 node_modules
