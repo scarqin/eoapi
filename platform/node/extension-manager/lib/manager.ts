@@ -1,7 +1,9 @@
 import { MODULE_DIR as baseDir } from '../../../../shared/common/constant';
 import { ModuleHandler } from './handler';
+import { CoreHandler } from './core';
 import { ModuleInfo, ModuleManagerInfo, ModuleManagerInterface, ModuleType } from '../types';
 import * as path from 'path';
+import { isNotEmpty } from '../../../../shared/common/common';
 
 export class ModuleManager implements ModuleManagerInterface {
   /**
@@ -76,7 +78,6 @@ export class ModuleManager implements ModuleManagerInterface {
    * 获取边栏应用列表
    */
   getSideModuleList(moduleID: string): Array<ModuleInfo> {
-    console.log(moduleID);
     const output: Array<ModuleInfo> = [];
     const modules: Map<string, ModuleInfo> = this.moduleBelongs();
     modules.get(moduleID)?.sideItems?.forEach((_moduleID: string) => {
@@ -118,6 +119,7 @@ export class ModuleManager implements ModuleManagerInterface {
    * @param moduleInfo
    */
   private set(moduleInfo: ModuleInfo) {
+    // 避免重置
     this.modules.set(moduleInfo.moduleID, moduleInfo);
   }
 
@@ -126,6 +128,7 @@ export class ModuleManager implements ModuleManagerInterface {
    * @param moduleInfo
    */
   private delete(moduleInfo: ModuleInfo) {
+    // 避免删除核心
     this.modules.delete(moduleInfo.moduleID);
   }
 
@@ -134,6 +137,7 @@ export class ModuleManager implements ModuleManagerInterface {
    * 待处理：在初始化时加入系统模块的加载
    */
   private init() {
+    this.initCore();
     const moduleNames: string[] = this.moduleHandler.list();
     moduleNames.forEach((moduleName: string) => {
       // 这里要加上try catch，避免异常
@@ -143,39 +147,36 @@ export class ModuleManager implements ModuleManagerInterface {
   }
 
   /**
-   * 获取模块到上层模块后的模块列表
-   * @param module
+   * 初始化核心模块的加载
    */
+  private initCore() {
+    const coreDir = path.join(__dirname, '../../../../core');
+    const coreHandler = new CoreHandler({baseDir: coreDir});
+    const moduleNames: string[] = coreHandler.list();
+    moduleNames.forEach((moduleName: string) => {
+      const moduleInfo: ModuleInfo = coreHandler.info(moduleName);
+      if (moduleInfo.moduleID) {
+        this.set(moduleInfo);
+      }
+    });
+  }
+
+  /**
+   * 获取模块到上层模块后的模块列表
+   * @returns 
+   */ 
   private moduleBelongs(): Map<string, ModuleInfo> {
     const newModules: Map<string, ModuleInfo> = new Map();
     const sideItems = new Map();
     const featureItems = new Map();
-    // 绑定默认
-    const defaultModule: ModuleInfo = {
-      name: 'default',
-      author: 'system',
-      version: '1.0.0',
-      description: '系统默认模块',
-      moduleID: 'default',
-      moduleName: 'API',
-      type: ModuleType.app,
-      isApp: true,
-      logo: 'file://' + path.join(__dirname, '../../../../core/api-manager/browser/dist/assets/images/icon.png'),
-      main: 'file://' + path.join(__dirname, '../../../../core/api-manager/browser/dist/index.html'),
-      main_debug: 'http://localhost:4200',
-    };
-    // 加入系统默认模块做关联
-    newModules.set(defaultModule.moduleID, defaultModule);
-    sideItems.set(defaultModule.moduleID, [defaultModule.moduleID]);
     this.modules?.forEach((module: ModuleInfo) => {
-      const belongs: string[] = module.belongs || [defaultModule.moduleID];
       // 如果包含自己则是主应用
       // 后期加入权限限制是否能成为顶层应用
-      module.isApp = belongs.includes(module.moduleID);
+      module.isApp = module.belongs.includes(module.moduleID);
       newModules.set(module.moduleID, module);
-      belongs.forEach((belong: string) => {
+      module.belongs.forEach((belong: string) => {
         let _modules: string[];
-        if (module.type === ModuleType.app) {
+        if (module.moduleType === ModuleType.app) {
           if (!sideItems.has(belong)) {
             _modules = [];
           } else {
@@ -188,7 +189,7 @@ export class ModuleManager implements ModuleManagerInterface {
             _modules.push(module.moduleID);
           }
           sideItems.set(belong, _modules);
-        } else if (module.type === ModuleType.feature) {
+        } else if (module.moduleType === ModuleType.feature) {
           if (!featureItems.has(belong)) {
             _modules = [];
           } else {

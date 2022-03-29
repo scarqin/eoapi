@@ -1,20 +1,16 @@
 {
-  "name": "eoapi",
+  "name": "api-manager",
   "version": "0.0.1",
-  "description": "API ToolKit",
-  "homepage": "https://github.com/eolinker/eoapi.git",
-  "author": {
-    "name": "eoapi",
-    "email": "dev@eolink.com"
-  },
-  "keywords": [
-    "angular",
-    "typescript",
-    "playwright",
-    "eslint",
-    "sass"
-  ],
   "private": true,
+  "description": "API Manager",
+  "homepage": "https://github.com/eolinker/eoapi.git",
+  "author": "eoapi",
+  "moduleID": "default",
+  "moduleName": "API Manager",
+  "moduleType": "app",
+  "logo": "dist/assets/images/icon.png",
+  "main": "dist/index.html",
+  "main_debug": "http://localhost:4200",
   "scripts": {
     "ng": "ng",
     "start": "ng serve -c web",

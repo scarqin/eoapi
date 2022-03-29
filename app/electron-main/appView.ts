@@ -21,7 +21,7 @@ export class AppViews {
   create(moduleID: string) {
     this.moduleID = moduleID;
     const module: ModuleInfo = moduleManager.getModule(moduleID, true);
-    if (module && module.type === ModuleType.app) {
+    if (module && module.moduleType === ModuleType.app) {
       let refresh: boolean = false;
       if (module.isApp && this.mainModuleID !== module.moduleID) {
         this.mainModuleID = module.moduleID;

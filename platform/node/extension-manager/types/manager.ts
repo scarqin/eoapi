@@ -30,7 +30,7 @@ export interface ModuleInfo {
   // 模块名称，用于显示
   moduleName: string;
   // 模块类型
-  type: ModuleType;
+  moduleType: ModuleType;
   // 模块Logo
   logo: string;
   // 入口文件
