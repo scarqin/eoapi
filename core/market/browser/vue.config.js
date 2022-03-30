@@ -1,5 +1,6 @@
-// vue.config.js for less-loader@6.0.0
-module.exports = {
+const { defineConfig } = require('@vue/cli-service')
+module.exports = defineConfig({
+  transpileDependencies: true,
   css: {
     loaderOptions: {
       less: {
@@ -13,4 +14,4 @@ module.exports = {
       }
     }
   }
-};
+})

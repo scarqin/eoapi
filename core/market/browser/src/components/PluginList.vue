@@ -71,7 +71,7 @@ watch(
   }
 );
 </script>
-<style lang="stylus" scoped>
+<style lang="less" scoped>
 .desc {
   overflow: hidden;
   display: -webkit-box;

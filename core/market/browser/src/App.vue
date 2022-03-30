@@ -57,7 +57,7 @@ const handleSelect = (key) => {
 };
 </script>
 
-<style lang="stylus" scoped>
+<style lang="less" scoped>
 .main {
   height: 100vh;
   width: 100%;

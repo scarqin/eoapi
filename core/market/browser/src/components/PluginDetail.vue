@@ -55,7 +55,7 @@ onMounted(async () => {
   pluginDetail.value = data;
 });
 </script>
-<style lang="stylus" scoped>
+<style lang="less" scoped>
 .ant-btn-dangerous.ant-btn-primary {
   background: #ff3c32;
 }
