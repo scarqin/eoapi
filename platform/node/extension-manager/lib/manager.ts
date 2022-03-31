@@ -141,7 +141,9 @@ export class ModuleManager implements ModuleManagerInterface {
     moduleNames.forEach((moduleName: string) => {
       // 这里要加上try catch，避免异常
       const moduleInfo: ModuleInfo = this.moduleHandler.info(moduleName);
-      this.set(moduleInfo);
+      if (moduleInfo.moduleID) {
+        this.set(moduleInfo);
+      }
     });
   }
 
