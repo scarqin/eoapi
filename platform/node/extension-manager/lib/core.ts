@@ -56,8 +56,8 @@ export class CoreHandler {
 
   /**
    * 获取模块目录
-   * @param name 
-   * @returns 
+   * @param name
+   * @returns
    */
   getModuleDir(name: string): string {
     return path.join(this.baseDir, name, 'browser');
@@ -73,6 +73,6 @@ export class CoreHandler {
       // @ts-ignore
       modules = Object.keys(packageInfo.dependencies || {});
     }
-    return modules;;
+    return modules;
   }
 }

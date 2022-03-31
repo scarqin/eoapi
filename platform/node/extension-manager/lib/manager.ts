@@ -16,7 +16,7 @@ export class ModuleManager implements ModuleManagerInterface {
   private readonly modules: Map<string, ModuleInfo>;
 
   constructor() {
-    this.moduleHandler = new ModuleHandler({baseDir: baseDir});
+    this.moduleHandler = new ModuleHandler({ baseDir: baseDir });
     this.modules = new Map();
     this.init();
   }
@@ -152,7 +152,7 @@ export class ModuleManager implements ModuleManagerInterface {
    */
   private initCore() {
     const coreDir = path.join(__dirname, '../../../../core');
-    const coreHandler = new CoreHandler({baseDir: coreDir});
+    const coreHandler = new CoreHandler({ baseDir: coreDir });
     const moduleNames: string[] = coreHandler.list();
     moduleNames.forEach((moduleName: string) => {
       const moduleInfo: ModuleInfo = coreHandler.info(moduleName);
@@ -164,8 +164,8 @@ export class ModuleManager implements ModuleManagerInterface {
 
   /**
    * 获取模块到上层模块后的模块列表
-   * @returns 
-   */ 
+   * @returns
+   */
   private moduleBelongs(): Map<string, ModuleInfo> {
     const newModules: Map<string, ModuleInfo> = new Map();
     const sideItems = new Map();
@@ -217,7 +217,6 @@ export class ModuleManager implements ModuleManagerInterface {
 
     return newModules;
   }
-
 }
 
 export default () => new ModuleManager();

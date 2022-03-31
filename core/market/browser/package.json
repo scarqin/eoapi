@@ -1,22 +1,22 @@
 {
   "name": "market",
   "version": "0.1.0",
-  "description": "API Toolkit Market",
   "private": true,
-  "moduleID": "market",
-  "moduleName": "Market",
-  "moduleType": "app",
-  "logo": "dist/icon.png",
-  "main": "dist/index.html",
-  "main_debug": "http://localhost:8080",
+  "description": "API Toolkit Market",
   "belongs": [
     "default"
   ],
+  "logo": "dist/icon.png",
+  "main_debug": "http://localhost:8080",
+  "moduleID": "market",
+  "moduleName": "Market",
+  "moduleType": "app",
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint"
   },
+  "main": "dist/index.html",
   "dependencies": {
     "@ant-design/icons-vue": "^6.1.0",
     "ant-design-vue": "^2.2.8",
@@ -33,7 +33,10 @@
     "@vue/cli-service": "~5.0.0",
     "eslint": "^7.32.0",
     "eslint-plugin-vue": "^8.0.3",
-    "less-loader": "^10.2.0"
+    "less": "^4.1.2",
+    "less-loader": "^10.2.0",
+    "vue-cli-plugin-windicss": "~1.1.3",
+    "windicss": "^3.5.1"
   },
   "eslintConfig": {
     "root": true,

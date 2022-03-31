@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { takeWhile } from 'rxjs/operators';
 import { ElectronService } from '../../../core/services';
-import { ModuleInfo } from '../../../../../../../platform/node/extension-manager'; 
+import { ModuleInfo } from '../../../../../../../platform/node/extension-manager';
 import { SidebarService } from './sidebar.service';
 @Component({
   selector: 'eo-sidebar',
@@ -22,7 +22,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
       .subscribe((isCollapsed) => {
         this.isCollapsed = isCollapsed;
         if (this.isElectron) {
-          const sideWidth : number = isCollapsed ? 50 : 90;
+          const sideWidth: number = isCollapsed ? 50 : 90;
           window.eo.autoResize(sideWidth);
         }
       });
@@ -47,12 +47,12 @@ export class SidebarComponent implements OnInit, OnDestroy {
   }
 
   getModules(): Array<ModuleInfo> {
-    console.log(this.modules);
-    return Array.from(this.modules.values());
+    console.log('=>', this.modules);
+    return typeof this.modules === 'string' ? [] : Array.from(this.modules.values());
   }
 
   openApp(moduleID: string) {
-    this.modules = window.eo.openApp({moduleID: moduleID});
+    this.modules = window.eo.openApp({ moduleID: moduleID });
   }
 
   ngOnDestroy(): void {

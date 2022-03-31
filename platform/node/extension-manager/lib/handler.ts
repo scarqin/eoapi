@@ -24,29 +24,29 @@ export class ModuleHandler extends CoreHandler {
     this.registry = options.registry;
     this.proxy = options.proxy;
   }
-  
+
   /**
    * 检查package.json
    */
   checkPackageJson(): void {
     const packageJsonFile: string = path.join(this.baseDir, 'package.json');
     if (!fileExists(packageJsonFile)) {
-        const data = {
-          name: 'eoapi-modules',
-          description: 'EOAPI modules package',
-          dependencies: {}
-        };
-        writeJson(packageJsonFile, data);
+      const data = {
+        name: 'eoapi-modules',
+        description: 'EOAPI modules package',
+        dependencies: {},
+      };
+      writeJson(packageJsonFile, data);
     }
   }
 
   /**
    * 获取模块目录
-   * @param name 
-   * @returns 
+   * @param name
+   * @returns
    */
   getModuleDir(name: string): string {
-      return path.join(this.baseDir, 'node_modules', name);
+    return path.join(this.baseDir, 'node_modules', name);
   }
 
   /**
@@ -94,13 +94,17 @@ export class ModuleHandler extends CoreHandler {
       const npm = spawn('npm', args, { cwd: this.baseDir });
       let output = '';
       // @ts-ignore
-      npm.stdout.on('data', (data: string) => {
-        output += data;
-      }).pipe(process.stdout);
+      npm.stdout
+        .on('data', (data: string) => {
+          output += data;
+        })
+        .pipe(process.stdout);
       // @ts-ignore
-      npm.stderr.on('data', (data: string) => {
-        output += data;
-      }).pipe(process.stderr);
+      npm.stderr
+        .on('data', (data: string) => {
+          output += data;
+        })
+        .pipe(process.stderr);
       npm.on('close', (code: number) => {
         if (!code) {
           resolve({ code: 0, data: output });
@@ -108,6 +112,6 @@ export class ModuleHandler extends CoreHandler {
           resolve({ code: code, data: output });
         }
       });
-    })
+    });
   }
 }
