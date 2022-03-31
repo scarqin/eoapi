@@ -171,9 +171,10 @@ export class ModuleManager implements ModuleManagerInterface {
     this.modules?.forEach((module: ModuleInfo) => {
       // 如果包含自己则是主应用
       // 后期加入权限限制是否能成为顶层应用
-      module.isApp = module.belongs.includes(module.moduleID);
+      const belongs: string[] = module.belongs || ['default'];
+      module.isApp = belongs.includes(module.moduleID);
       newModules.set(module.moduleID, module);
-      module.belongs.forEach((belong: string) => {
+      belongs.forEach((belong: string) => {
         let _modules: string[];
         if (module.moduleType === ModuleType.app) {
           if (!sideItems.has(belong)) {
