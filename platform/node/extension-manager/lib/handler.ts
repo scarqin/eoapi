@@ -1,9 +1,8 @@
 import * as path from 'path';
-import spawn from 'cross-spawn';
 import { ModuleHandlerOptions, ModuleHandlerResult } from '../types';
 import { fileExists, writeJson } from '../../../../shared/node/file';
 import { CoreHandler } from './core';
-
+import * as spawn from 'cross-spawn';
 /**
  * 本地模块管理器
  * @class ModuleHandler
@@ -91,6 +90,7 @@ export class ModuleHandler extends CoreHandler {
           args = args.concat(`--proxy=${this.proxy}`);
         }
       }
+      console.log(args);
       const npm = spawn('npm', args, { cwd: this.baseDir });
       let output = '';
       // @ts-ignore

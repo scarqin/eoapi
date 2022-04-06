@@ -176,7 +176,7 @@ try {
     }
   });
   // 这里可以封装成类+方法匹配调用，不用多个if else
-  ipcMain.on('eo-sync', (event, arg) => {
+  ipcMain.on('eo-sync', async (event, arg) => {
     let returnValue: any;
     if (arg.action === 'getApiAccessRules') {
       // 后期加入权限生成，根据moduleID，上层moduleID，应用范围等
@@ -187,6 +187,18 @@ try {
       returnValue = moduleManager.getModules(true);
     } else if (arg.action === 'getAppModuleList') {
       returnValue = moduleManager.getAppModuleList();
+    } else if (arg.action === 'installModule') {
+      const data = await moduleManager.install(arg.data);
+      if (data.code === 0) {
+        subView.mainView.view.webContents.send('moduleUpdate');
+      }
+      returnValue = Object.assign(data, { modules: moduleManager.getModules() });
+    } else if (arg.action === 'uninstallModule') {
+      const data = await moduleManager.uninstall(arg.data);
+      if (data.code === 0) {
+        subView.mainView.view.webContents.send('moduleUpdate');
+      }
+      returnValue = Object.assign(data, { modules: moduleManager.getModules() });
     } else if (arg.action === 'getSideModuleList') {
       returnValue = moduleManager.getSideModuleList(subView.appView.mainModuleID);
     } else if (arg.action === 'getSidePosition') {

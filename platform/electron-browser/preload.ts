@@ -61,6 +61,14 @@ window.eo.autoResize = (sideWidth) => {
 window.eo.getModules = () => {
   return ipcRenderer.sendSync('eo-sync', { action: 'getModules' });
 };
+window.eo.installModule = (name, isLocal) => {
+  isLocal = isLocal || false;
+  return ipcRenderer.sendSync('eo-sync', { action: 'installModule', data: { name: name, isLocal: isLocal } });
+};
+window.eo.uninstallModule = (name, isLocal) => {
+  isLocal = isLocal || false;
+  return ipcRenderer.sendSync('eo-sync', { action: 'uninstallModule', data: { name: name, isLocal: isLocal } });
+};
 window.eo.openApp = (inputArg) => {
   return ipcRenderer.sendSync('eo-sync', { action: 'openApp', data: inputArg });
 };

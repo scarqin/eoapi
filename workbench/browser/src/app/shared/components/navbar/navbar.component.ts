@@ -46,6 +46,6 @@ export class NavbarComponent implements OnInit {
   }
 
   openApp(moduleID: string) {
-    this.modules = window.eo.openApp({moduleID: moduleID});
+    window.eo.openApp({moduleID: moduleID});
   }
 }

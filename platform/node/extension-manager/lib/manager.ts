@@ -1,7 +1,7 @@
 import { MODULE_DIR as baseDir } from '../../../../shared/common/constant';
 import { ModuleHandler } from './handler';
 import { CoreHandler } from './core';
-import { ModuleInfo, ModuleManagerInfo, ModuleManagerInterface, ModuleType } from '../types';
+import { ModuleHandlerResult, ModuleInfo, ModuleManagerInfo, ModuleManagerInterface, ModuleType } from '../types';
 import * as path from 'path';
 
 export class ModuleManager implements ModuleManagerInterface {
@@ -25,29 +25,38 @@ export class ModuleManager implements ModuleManagerInterface {
    * 安装模块，调用npm install | link
    * @param module
    */
-  async install(module: ModuleManagerInfo): Promise<void> {
-    await this.moduleHandler.install([module.name], module.isLocal || false);
-    const moduleInfo: ModuleInfo = this.moduleHandler.info(module.name);
-    this.set(moduleInfo);
+  async install(module: ModuleManagerInfo): Promise<ModuleHandlerResult> {
+    const result = await this.moduleHandler.install([module.name], module.isLocal || false);
+    if (result.code === 0) {
+      const moduleInfo: ModuleInfo = this.moduleHandler.info(module.name);
+      this.set(moduleInfo);
+    }
+    return result;
   }
 
   /**
    * 更新模块，调用npm update
    * @param module
    */
-  async update(module: ModuleManagerInfo): Promise<void> {
-    await this.moduleHandler.update(module.name);
-    this.refresh(module);
+  async update(module: ModuleManagerInfo): Promise<ModuleHandlerResult> {
+    const result = await this.moduleHandler.update(module.name);
+    if (result.code === 0) {
+      this.refresh(module);
+    }
+    return result;
   }
 
   /**
    * 删除模块，调用npm uninstall | unlink
    * @param module
    */
-  async uninstall(module: ModuleManagerInfo): Promise<void> {
+  async uninstall(module: ModuleManagerInfo): Promise<ModuleHandlerResult> {
     const moduleInfo: ModuleInfo = this.moduleHandler.info(module.name);
-    await this.moduleHandler.uninstall([module.name], module.isLocal || false);
-    this.delete(moduleInfo);
+    const result = await this.moduleHandler.uninstall([module.name], module.isLocal || false);
+    if (result.code === 0) {
+      this.delete(moduleInfo);
+    }
+    return result;
   }
 
   /**
