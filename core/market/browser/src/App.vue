@@ -2,37 +2,16 @@
   <section class="main">
     <section class="left flex-shrink-0">
       <div class="mb-2"><appstore-filled class="mr-2" />插件分类</div>
-      <div
-        :class="[
-          'plugin-link',
-          'px-1',
-          'py-2',
-          { active: activeKey === 'all' },
-        ]"
-        @click="handleSelect('all')"
-      >
+      <div :class="['plugin-link', 'px-1', 'py-2', { active: activeKey === 'all' }]" @click="handleSelect('all')">
         全部插件
       </div>
       <div
-        :class="[
-          'plugin-link',
-          'px-1',
-          'py-2',
-          { active: activeKey === 'official' },
-        ]"
+        :class="['plugin-link', 'px-1', 'py-2', { active: activeKey === 'official' }]"
         @click="handleSelect('official')"
       >
         官方插件
       </div>
-      <div
-        :class="[
-          'plugin-link',
-          'px-1',
-          'py-2',
-          { active: activeKey === 'owm' },
-        ]"
-        @click="handleSelect('owm')"
-      >
+      <div :class="['plugin-link', 'px-1', 'py-2', { active: activeKey === 'local' }]" @click="handleSelect('local')">
         已安装（3）
       </div>
     </section>
@@ -43,17 +22,17 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
-import { useRouter } from "vue-router";
-import { AppstoreFilled } from "@ant-design/icons-vue";
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { AppstoreFilled } from '@ant-design/icons-vue';
 
 const router = useRouter();
 
-const activeKey = ref("all");
+const activeKey = ref('all');
 
 const handleSelect = (key) => {
   activeKey.value = key;
-  router.push({ path: "/", query: { type: key } });
+  router.push({ path: '/', query: { type: key } });
 };
 </script>
 
@@ -69,7 +48,8 @@ const handleSelect = (key) => {
     padding: 10px;
 
     .plugin-link {
-      &:hover, &.active {
+      &:hover,
+      &.active {
         color: #00785a;
         cursor: pointer;
       }

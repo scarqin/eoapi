@@ -26,10 +26,7 @@
       :key="index"
       @click="handleClick(it)"
     >
-      <i
-        class="block w-20 h-20 bg-cover bg-center bg-no-repeat"
-        :style="{ backgroundImage: `url(${require('../assets/logo.png')})` }"
-      ></i>
+      <i class="block w-20 h-20 bg-cover bg-center bg-no-repeat" :style="{ backgroundImage: `url(${it.logo})` }"></i>
       <span>{{ it.name }}</span>
       <span>{{ it.author }}</span>
       <div class="desc">{{ it.description }}</div>
@@ -52,7 +49,10 @@ const handleClick = ({ name }) => {
 };
 
 const queryPlugin = async (type = 'all') => {
-  console.log('=>', type);
+  if (type === 'local') {
+    const list = window.eo.getModules();
+    return Array.from(list).map((it) => it[1]);
+  }
   const [res, err] = await getList();
   if (err) {
     return;
@@ -64,6 +64,7 @@ onMounted(async () => {
   const type = route.query.type || '';
   renderList.value = await queryPlugin(type);
 });
+
 watch(
   () => route.query,
   async ({ type }) => {
