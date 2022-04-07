@@ -41,18 +41,33 @@ export class SidebarComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     if (this.isElectron) {
       this.modules = window.eo.getSideModuleList();
+      this.electron.ipcRenderer.on('moduleUpdate', (event, args) => {
+        console.log('get moduleUpdate');
+        this.modules = window.eo.getSideModuleList();
+      });
     } else {
       this.modules = new Map();
     }
   }
 
   getModules(): Array<ModuleInfo> {
-    console.log('=>', this.modules);
-    return typeof this.modules === 'string' ? [] : Array.from(this.modules.values());
+    return Array.from(this.modules.values());
   }
 
   openApp(moduleID: string) {
-    this.modules = window.eo.openApp({ moduleID: moduleID });
+    window.eo.openApp({ moduleID: moduleID });
+  }
+
+  installApp() {
+    console.log('install module');
+    const data = window.eo.installModule('app-debug', true);
+    console.log(data);
+  }
+
+  uninstallApp() {
+    console.log('uninstall module');
+    const data = window.eo.uninstallModule('app-debug', true);
+    console.log(data);
   }
 
   ngOnDestroy(): void {

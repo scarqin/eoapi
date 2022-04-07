@@ -1,4 +1,5 @@
 import { SidePosition } from '../../../../shared/common/bounds';
+import { ModuleHandlerResult } from './handler';
 
 /**
  * 模块类型
@@ -73,8 +74,9 @@ export interface ModuleManagerInfo {
  * getModules 获取所有模块列表，或返回有模块关联子模块的信息
  */
 export interface ModuleManagerInterface {
-  install: (module: ModuleManagerInfo) => Promise<void>;
-  uninstall: (module: ModuleManagerInfo) => Promise<void>;
+  install: (module: ModuleManagerInfo) => Promise<ModuleHandlerResult>;
+  update: (module: ModuleManagerInfo) => Promise<ModuleHandlerResult>;
+  uninstall: (module: ModuleManagerInfo) => Promise<ModuleHandlerResult>;
   refresh: (module: ModuleManagerInfo) => void;
   getModule: (moduleID: string, belongs?: boolean) => ModuleInfo;
   getModules: (belongs?: boolean) => Map<string, ModuleInfo>;
