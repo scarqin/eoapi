@@ -16,11 +16,11 @@
           <p class="w-full h-20">{{ pluginDetail.description }}</p>
         </div>
         <div class="flex">
-          <div class="flex items-center">
-            <a-button type="primary mr-4" size="large">安装</a-button>
+          <div class="flex items-center" v-if="pluginList.includes(pluginDetail.name)">
+            <a-button type="primary mr-4" size="large" @click="installApp(pluginDetail.name)">安装</a-button>
             <span>安装完成后需要重启</span>
           </div>
-          <a-button type="primary" size="large" danger>卸载</a-button>
+          <a-button v-else type="primary" size="large" @click="uninstallApp(pluginDetail.name)" danger>卸载</a-button>
         </div>
       </div>
     </div>
@@ -34,21 +34,35 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { reactive, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { getDetail } from '../http';
+import { useStore } from '../store';
 
-const pluginDetail = ref({});
+const store = useStore();
+const pluginDetail = reactive({});
 const router = useRouter();
 const route = useRoute();
 
+const pluginList = computed(() => store.getPluginList);
 const handleBack = () => {
   router.go(-1);
 };
 
+const installApp = (name) => {
+  console.log('install module');
+  const data = window.eo.installModule(name, true);
+  console.log(data);
+};
+
+const uninstallApp = (name) => {
+  console.log('uninstall module');
+  const data = window.eo.uninstallModule(name, true);
+  console.log(data);
+};
+
 onMounted(async () => {
   const name = route.query.name || '';
-  console.log('name', name);
   const [data, err] = await getDetail(name);
   if (err) {
     return;

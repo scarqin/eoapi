@@ -22,10 +22,12 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { AppstoreFilled } from '@ant-design/icons-vue';
+import { useStore } from './store.js';
 
+const store = useStore();
 const router = useRouter();
 
 const activeKey = ref('all');
@@ -34,6 +36,12 @@ const handleSelect = (key) => {
   activeKey.value = key;
   router.push({ path: '/', query: { type: key } });
 };
+
+onMounted(async () => {
+  const list = window.eo.getModules();
+  store.updatePluginList(list);
+  console.log('=>', store.pluginList);
+});
 </script>
 
 <style lang="less" scoped>
