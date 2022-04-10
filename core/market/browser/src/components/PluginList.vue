@@ -48,27 +48,34 @@ const handleClick = ({ name }) => {
   router.push({ path: '/plugin-detail', query: { name } });
 };
 
-const queryPlugin = async (type = 'all') => {
+const searchPlugin = async (type = 'all') => {
   if (type === 'local') {
-    const list = window.eo.getModules();
-    return Array.from(list).map((it) => it[1]);
+    const map = window.eo.getModules();
+    console.log(
+      '>>?',
+      [...map].map((it) => it[1])
+    );
+    return [...map].map((it) => it[1]);
   }
   const [res, err] = await getList();
   if (err) {
     return;
+  }
+  if (type === 'official') {
+    return res.filter((it) => it.name.includes('eo-module-'));
   }
   return res;
 };
 
 onMounted(async () => {
   const type = route.query.type || '';
-  renderList.value = await queryPlugin(type);
+  renderList.value = await searchPlugin(type);
 });
 
 watch(
   () => route.query,
   async ({ type }) => {
-    renderList.value = await queryPlugin(type);
+    renderList.value = await searchPlugin(type);
   }
 );
 </script>

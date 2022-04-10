@@ -17,9 +17,7 @@ export const useStore = defineStore({
   actions: {
     updatePluginList(list) {
       // 使用 this 直接修改
-      this.pluginList = Array.from(list)
-        .map((it) => it[1].name)
-        .filter((it) => it);
+      this.pluginList = Array.from(list.keys()).filter((it) => it);
     },
   },
 });

@@ -12,7 +12,7 @@
         官方插件
       </div>
       <div :class="['plugin-link', 'px-1', 'py-2', { active: activeKey === 'local' }]" @click="handleSelect('local')">
-        已安装（3）
+        已安装（{{ installedPlugin }}）
       </div>
     </section>
     <section class="right flex-1 px-4">
@@ -22,7 +22,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { AppstoreFilled } from '@ant-design/icons-vue';
 import { useStore } from './store.js';
@@ -30,6 +30,7 @@ import { useStore } from './store.js';
 const store = useStore();
 const router = useRouter();
 
+const installedPlugin = computed(() => store.getPluginList.length);
 const activeKey = ref('all');
 
 const handleSelect = (key) => {
@@ -39,8 +40,8 @@ const handleSelect = (key) => {
 
 onMounted(async () => {
   const list = window.eo.getModules();
+  console.log('Installed module:', list);
   store.updatePluginList(list);
-  console.log('=>', store.pluginList);
 });
 </script>
 

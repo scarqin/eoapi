@@ -12,11 +12,14 @@
         <div class="flex flex-col">
           <span class="text-lg mb-2">{{ pluginDetail.name }}</span>
           <span>作者: {{ pluginDetail.author }}</span>
-          <span class="mb-4">Tags: {Tags}</span>
+          <!-- <span class="mb-4">Tags: {Tags}</span> -->
+          <span class="mb-4">Version: {{ pluginDetail.version }}</span>
           <p class="w-full h-20">{{ pluginDetail.description }}</p>
         </div>
         <div class="flex">
-          <div class="flex items-center" v-if="pluginList.includes(pluginDetail.name)">
+          {{ pluginList }}{{ pluginDetail.name }}
+          {{ !pluginList.includes(pluginDetail.name) }}
+          <div class="flex items-center" v-if="!pluginList.includes(pluginDetail.name)">
             <a-button type="primary mr-4" size="large" @click="installApp(pluginDetail.name)">安装</a-button>
             <span>安装完成后需要重启</span>
           </div>
@@ -50,15 +53,23 @@ const handleBack = () => {
 };
 
 const installApp = (name) => {
-  console.log('install module');
-  const data = window.eo.installModule(name, true);
-  console.log(data);
+  console.log('Install module:', name);
+  const { code, data, modules } = window.eo.installModule(name, true);
+  if (code === 0) {
+    store.updatePluginList(modules);
+    return;
+  }
+  console.error(data);
 };
 
 const uninstallApp = (name) => {
-  console.log('uninstall module');
-  const data = window.eo.uninstallModule(name, true);
-  console.log(data);
+  console.log('Uninstall module:', name);
+  const { code, data, modules } = window.eo.uninstallModule(name, true);
+  if (code === 0) {
+    store.updatePluginList(modules);
+    return;
+  }
+  console.error(data);
 };
 
 onMounted(async () => {
@@ -67,7 +78,8 @@ onMounted(async () => {
   if (err) {
     return;
   }
-  pluginDetail.value = data;
+  console.log(pluginList.value);
+  Object.assign(pluginDetail, data);
 });
 </script>
 <style lang="less" scoped>
