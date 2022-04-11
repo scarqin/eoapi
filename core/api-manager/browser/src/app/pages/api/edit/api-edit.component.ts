@@ -68,7 +68,7 @@ export class ApiEditComponent implements OnInit, OnDestroy {
       });
       treeItems.sort((a, b) => a.weight - b.weight);
     }
-    listToTree(treeItems, this.groups, '0');
+    listToTree(treeItems, this.groups, '-1');
     this.afterInitGroup();
   }
   getApi(id) {
@@ -214,8 +214,11 @@ export class ApiEditComponent implements OnInit, OnDestroy {
    * Reset Group ID after group list load
    */
   private afterInitGroup() {
-    const groupID = this.apiData.groupID;
-    this.apiData.groupID = '';
+    let groupID: number | string = '-1';
+    if (this.apiData && this.apiData.groupID) {
+      groupID = this.apiData.groupID;
+      this.apiData.groupID = '';
+    }
     setTimeout(() => {
       this.apiData.groupID = groupID;
       this.changeGroupID$.next(groupID);

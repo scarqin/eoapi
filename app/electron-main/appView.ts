@@ -28,8 +28,19 @@ export class AppViews {
         this.sidePosition = module.sidePosition;
         refresh = true;
       }
-      return this.createAppView(module, refresh);
+      this.createAppView(module, refresh);
     }
+    if (module.main_node) {
+      const main_node = require(module.main_node);
+      if (main_node.module && typeof main_node.module === 'object') {
+        const _fun = main_node.module;
+        console.log(_fun);
+        _fun.setup({
+          appView: this.view
+        });
+      }
+    }
+    return this.view;
   }
 
   /**
@@ -58,7 +69,7 @@ export class AppViews {
    * @param module
    * @param window
    */
-  private createAppView(module: ModuleInfo, refresh: boolean): BrowserView {
+  private createAppView(module: ModuleInfo, refresh: boolean) {
     const windBounds = this.win.getContentBounds();
     const _bounds: ViewBounds = getViewBounds(ViewZone.main, windBounds.width, windBounds.height, this.sidePosition);
     let _view = new BrowserViewInstance({
@@ -81,6 +92,6 @@ export class AppViews {
       //_view.setAutoResize({ width: true });
       //this.win.webContents.executeJavaScript(`window.getModules1()`);
     });
-    return this.view;
+    //return this.view;
   }
 }

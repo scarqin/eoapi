@@ -85,10 +85,10 @@ export class ApiGroupTreeComponent implements OnInit, OnDestroy {
     this.getGroups();
   }
   getGroups() {
-    const result: StorageHandleResult = this.storage.run('groupLoadAllByProjectID', [this.projectID]);
+    let result: StorageHandleResult = this.storage.run('groupLoadAllByProjectID', [this.projectID]);
     if (result.status === StorageHandleStatus.success) {
       result.data.forEach((item) => {
-        item.updatedAt = null;
+        delete item.__proto__.updatedAt;
         this.groupByID[item.uuid] = item;
         this.treeItems.push({
           title: item.name,
@@ -102,11 +102,11 @@ export class ApiGroupTreeComponent implements OnInit, OnDestroy {
     this.getApis();
   }
   getApis() {
-    const result: StorageHandleResult = this.storage.run('apiDataLoadAllByProjectID', [this.projectID]);
+    let result: StorageHandleResult = this.storage.run('apiDataLoadAllByProjectID', [this.projectID]);
     if (result.status === StorageHandleStatus.success) {
       let apiItems = {};
       result.data.forEach((item) => {
-        item.updatedAt = null;
+        delete item.__proto__.updatedAt;
         apiItems[item.uuid] = item;
         this.treeItems.push({
           title: item.name,

@@ -36,6 +36,8 @@ export interface ModuleInfo {
   logo: string;
   // 入口文件
   main: string;
+  // main端运行脚本
+  main_node?: string;
   // 入口开发调试
   main_debug?: string;
   // 预加载js文件

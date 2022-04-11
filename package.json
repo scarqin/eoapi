@@ -11,6 +11,7 @@
     "build:app": "cd app/browser&&npm run build",
     "install:api-manager": "cd core/api-manager/browser&&npm ci",
     "start:api-manager": "cd core/api-manager/browser&&npm start",
+    "install:api-manager-node": "cd core/api-manager/node&&npm ci",
     "install:workbench": "cd workbench/browser&&npm install",
     "start:workbench": "cd workbench/browser&&npm start",
     "build:workbench": "cd workbench/browser&&npm run build",

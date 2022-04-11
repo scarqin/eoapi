@@ -1,36 +1,18 @@
 import * as child_process from 'child_process';
 import { BrowserView, ipcMain } from 'electron';
-const workerLoop = {};
 
-export const setupUnit = (mainView) => {
-  ipcMain.on('unitTest', function (event, message) {
-    let id = message.id;
-    switch (message.action) {
-      case 'ajax': {
-        workerLoop[id] = new UnitWorker(mainView);
-        workerLoop[id].start(message);
-        break;
-      }
-      case 'abort': {
-        workerLoop[id].kill();
-        break;
-      }
-    }
-  });
-};
-
-export class UnitWorker {
+class UnitWorker {
   instance: child_process.ChildProcess;
   view: BrowserView;
-  constructor(view) {
+  constructor(view: BrowserView) {
     this.view = view;
   }
-  start(message) {
+  start(message: any) {
     this.instance = child_process.fork(`${__dirname}/request/main.js`);
     this.watch();
     this.instance.send(message);
   }
-  finish(message) {
+  finish(message: any) {
     this.view.webContents.send('unitTest', message);
     this.kill();
   }
@@ -48,3 +30,27 @@ export class UnitWorker {
     });
   }
 }
+
+export const module = {
+  works: {},
+  setup(eo: any) {
+    console.log('setup');
+    ipcMain.removeAllListeners('unitTest');
+    ipcMain.on('unitTest', function (event, message) {
+      console.log('unitTest run');
+      console.log(message);
+      const id = message.id;
+      switch (message.action) {
+        case 'ajax': {
+          module.works[id] = new UnitWorker(eo.appView);
+          module.works[id].start(message);
+          break;
+        }
+        case 'abort': {
+          module.works[id].kill();
+          break;
+        }
+      }
+    });
+  }
+};

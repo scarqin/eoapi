@@ -42,6 +42,9 @@ export class CoreHandler {
       if (moduleInfo.preload && moduleInfo.preload.length > 0) {
         moduleInfo.preload = path.join(moduleInfo.baseDir, moduleInfo.preload);
       }
+      if (moduleInfo.main_node && moduleInfo.main_node.length > 0) {
+        moduleInfo.main_node = path.join(moduleInfo.baseDir, moduleInfo.main_node);
+      }
       if (moduleInfo.logo && moduleInfo.logo.length > 0 && !moduleInfo.logo.startsWith('http')) {
         moduleInfo.logo = 'file://' + path.join(moduleInfo.baseDir, moduleInfo.logo);
       }
