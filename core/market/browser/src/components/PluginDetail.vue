@@ -54,8 +54,9 @@ const handleBack = () => {
 
 const installApp = (name) => {
   console.log('Install module:', name);
-  const { code, data, modules } = window.eo.installModule(name, true);
+  const { code, data, modules } = window.eo.installModule(name);
   if (code === 0) {
+    console.log('=>', modules);
     store.updatePluginList(modules);
     return;
   }
@@ -64,7 +65,7 @@ const installApp = (name) => {
 
 const uninstallApp = (name) => {
   console.log('Uninstall module:', name);
-  const { code, data, modules } = window.eo.uninstallModule(name, true);
+  const { code, data, modules } = window.eo.uninstallModule(name);
   if (code === 0) {
     store.updatePluginList(modules);
     return;
