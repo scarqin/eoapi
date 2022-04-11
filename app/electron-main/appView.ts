@@ -87,7 +87,6 @@ export class AppViews {
     });
     this.view.webContents.once('dom-ready', () => {
       this.rebuildBounds();
-      _view.webContents.openDevTools();
       require('@electron/remote/main').enable(this.view.webContents);
       //_view.setAutoResize({ width: true });
       //this.win.webContents.executeJavaScript(`window.getModules1()`);

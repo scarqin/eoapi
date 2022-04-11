@@ -26,10 +26,7 @@
       :key="index"
       @click="handleClick(it)"
     >
-      <i
-        class="block w-20 h-20 bg-cover bg-center bg-no-repeat"
-        :style="{ backgroundImage: `url(${require('../assets/logo.png')})` }"
-      ></i>
+      <i class="block w-20 h-20 bg-cover bg-center bg-no-repeat" :style="{ backgroundImage: `url(${it.logo})` }"></i>
       <span>{{ it.name }}</span>
       <span>{{ it.author }}</span>
       <div class="desc">{{ it.description }}</div>
@@ -51,23 +48,34 @@ const handleClick = ({ name }) => {
   router.push({ path: '/plugin-detail', query: { name } });
 };
 
-const queryPlugin = async (type = 'all') => {
-  console.log('=>', type);
+const searchPlugin = async (type = 'all') => {
+  if (type === 'local') {
+    const map = window.eo.getModules();
+    console.log(
+      '>>?',
+      [...map].map((it) => it[1])
+    );
+    return [...map].map((it) => it[1]);
+  }
   const [res, err] = await getList();
   if (err) {
     return;
+  }
+  if (type === 'official') {
+    return res.filter((it) => it.name.includes('eo-module-'));
   }
   return res;
 };
 
 onMounted(async () => {
   const type = route.query.type || '';
-  renderList.value = await queryPlugin(type);
+  renderList.value = await searchPlugin(type);
 });
+
 watch(
   () => route.query,
   async ({ type }) => {
-    renderList.value = await queryPlugin(type);
+    renderList.value = await searchPlugin(type);
   }
 );
 </script>

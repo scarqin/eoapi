@@ -2,38 +2,17 @@
   <section class="main">
     <section class="left flex-shrink-0">
       <div class="mb-2"><appstore-filled class="mr-2" />插件分类</div>
-      <div
-        :class="[
-          'plugin-link',
-          'px-1',
-          'py-2',
-          { active: activeKey === 'all' },
-        ]"
-        @click="handleSelect('all')"
-      >
+      <div :class="['plugin-link', 'px-1', 'py-2', { active: activeKey === 'all' }]" @click="handleSelect('all')">
         全部插件
       </div>
       <div
-        :class="[
-          'plugin-link',
-          'px-1',
-          'py-2',
-          { active: activeKey === 'official' },
-        ]"
+        :class="['plugin-link', 'px-1', 'py-2', { active: activeKey === 'official' }]"
         @click="handleSelect('official')"
       >
         官方插件
       </div>
-      <div
-        :class="[
-          'plugin-link',
-          'px-1',
-          'py-2',
-          { active: activeKey === 'owm' },
-        ]"
-        @click="handleSelect('owm')"
-      >
-        已安装（3）
+      <div :class="['plugin-link', 'px-1', 'py-2', { active: activeKey === 'local' }]" @click="handleSelect('local')">
+        已安装（{{ installedPlugin }}）
       </div>
     </section>
     <section class="right flex-1 px-4">
@@ -43,18 +22,27 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
-import { useRouter } from "vue-router";
-import { AppstoreFilled } from "@ant-design/icons-vue";
+import { onMounted, ref, computed } from 'vue';
+import { useRouter } from 'vue-router';
+import { AppstoreFilled } from '@ant-design/icons-vue';
+import { useStore } from './store.js';
 
+const store = useStore();
 const router = useRouter();
 
-const activeKey = ref("all");
+const installedPlugin = computed(() => store.getPluginList.length);
+const activeKey = ref('all');
 
 const handleSelect = (key) => {
   activeKey.value = key;
-  router.push({ path: "/", query: { type: key } });
+  router.push({ path: '/', query: { type: key } });
 };
+
+onMounted(async () => {
+  const list = window.eo.getModules();
+  console.log('Installed module:', list);
+  store.updatePluginList(list);
+});
 </script>
 
 <style lang="less" scoped>
@@ -69,7 +57,8 @@ const handleSelect = (key) => {
     padding: 10px;
 
     .plugin-link {
-      &:hover, &.active {
+      &:hover,
+      &.active {
         color: #00785a;
         cursor: pointer;
       }

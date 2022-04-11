@@ -58,18 +58,6 @@ export class SidebarComponent implements OnInit, OnDestroy {
     window.eo.openApp({ moduleID: moduleID });
   }
 
-  installApp() {
-    console.log('install module');
-    const data = window.eo.installModule('app-debug', true);
-    console.log(data);
-  }
-
-  uninstallApp() {
-    console.log('uninstall module');
-    const data = window.eo.uninstallModule('app-debug', true);
-    console.log(data);
-  }
-
   ngOnDestroy(): void {
     this.destroy = true;
   }

@@ -6,21 +6,24 @@
     <div class="flex p-8">
       <i
         class="block h-40 w-40 bg-cover bg-center bg-no-repeat mr-8"
-        :style="{ backgroundImage: `url(${require('../assets/logo.png')})` }"
+        :style="{ backgroundImage: `url(${pluginDetail.logo})` }"
       ></i>
       <div class="flex flex-col flex-1">
         <div class="flex flex-col">
           <span class="text-lg mb-2">{{ pluginDetail.name }}</span>
           <span>作者: {{ pluginDetail.author }}</span>
-          <span class="mb-4">Tags: {Tags}</span>
+          <!-- <span class="mb-4">Tags: {Tags}</span> -->
+          <span class="mb-4">Version: {{ pluginDetail.version }}</span>
           <p class="w-full h-20">{{ pluginDetail.description }}</p>
         </div>
         <div class="flex">
-          <div class="flex items-center">
-            <a-button type="primary mr-4" size="large">安装</a-button>
+          {{ pluginList }}{{ pluginDetail.name }}
+          {{ !pluginList.includes(pluginDetail.name) }}
+          <div class="flex items-center" v-if="!pluginList.includes(pluginDetail.name)">
+            <a-button type="primary mr-4" size="large" @click="installApp(pluginDetail.name)">安装</a-button>
             <span>安装完成后需要重启</span>
           </div>
-          <a-button type="primary" size="large" danger>卸载</a-button>
+          <a-button v-else type="primary" size="large" @click="uninstallApp(pluginDetail.name)" danger>卸载</a-button>
         </div>
       </div>
     </div>
@@ -34,16 +37,39 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { reactive, computed, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { getDetail } from '../http';
+import { useStore } from '../store';
 
-const pluginDetail = ref({});
+const store = useStore();
+const pluginDetail = reactive({});
 const router = useRouter();
 const route = useRoute();
 
+const pluginList = computed(() => store.getPluginList);
 const handleBack = () => {
   router.go(-1);
+};
+
+const installApp = (name) => {
+  console.log('Install module:', name);
+  const { code, data, modules } = window.eo.installModule(name, true);
+  if (code === 0) {
+    store.updatePluginList(modules);
+    return;
+  }
+  console.error(data);
+};
+
+const uninstallApp = (name) => {
+  console.log('Uninstall module:', name);
+  const { code, data, modules } = window.eo.uninstallModule(name, true);
+  if (code === 0) {
+    store.updatePluginList(modules);
+    return;
+  }
+  console.error(data);
 };
 
 onMounted(async () => {
@@ -52,7 +78,8 @@ onMounted(async () => {
   if (err) {
     return;
   }
-  pluginDetail.value = data;
+  console.log(pluginList.value);
+  Object.assign(pluginDetail, data);
 });
 </script>
 <style lang="less" scoped>
