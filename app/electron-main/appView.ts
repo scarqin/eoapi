@@ -77,8 +77,7 @@ export class AppViews {
       partition: `<${module.moduleID}>`,
       preloadPath: path.join(__dirname, '../../', 'platform', 'electron-browser', 'preload.js'),
       preload: module.preload,
-      // viewPath: processEnv === 'development' ? 'http://localhost:4200' : `file://${module.main}`,
-      viewPath: module.main_debug ? module.main_debug : module.main,
+      viewPath: processEnv === 'development' && module.main_debug ? module.main_debug : module.main,
     }).init(this.win);
     this.remove()
     this.view = _view;

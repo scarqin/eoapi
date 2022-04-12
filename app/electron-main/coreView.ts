@@ -34,7 +34,7 @@ export class CoreViews {
       viewPath:
         processEnv === 'development'
           ? 'http://localhost:4201'
-          : `file://${path.join(process.cwd(), 'workbench', 'browser', 'dist', 'index.html')}`,
+          : `file://${path.join(__dirname, '../../', 'workbench', 'browser', 'dist', 'index.html')}`,
     }).init(this.win);
 
     this.view.webContents.once('dom-ready', () => {
