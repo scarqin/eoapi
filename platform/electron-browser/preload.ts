@@ -34,7 +34,7 @@ window.eo.getSideModuleList = () => {
 // Hook请求返回
 if (apiAccessRules.includes('hook')) {
   window.eo.hook = (data) => {
-    return ipcRenderer.sendSync('eo-sync', { action: 'hook', data: data });
+    return ipcRenderer.sendSync('eo-sync', { action: 'hook', data });
   };
 }
 // 临时测试用
@@ -61,13 +61,11 @@ window.eo.autoResize = (sideWidth) => {
 window.eo.getModules = () => {
   return ipcRenderer.sendSync('eo-sync', { action: 'getModules' });
 };
-window.eo.installModule = (name, isLocal) => {
-  isLocal = isLocal || false;
-  return ipcRenderer.sendSync('eo-sync', { action: 'installModule', data: { name: name, isLocal: isLocal } });
+window.eo.installModule = (name, isLocal = false) => {
+  return ipcRenderer.sendSync('eo-sync', { action: 'installModule', data: { name, isLocal } });
 };
-window.eo.uninstallModule = (name, isLocal) => {
-  isLocal = isLocal || false;
-  return ipcRenderer.sendSync('eo-sync', { action: 'uninstallModule', data: { name: name, isLocal: isLocal } });
+window.eo.uninstallModule = (name, isLocal = false) => {
+  return ipcRenderer.sendSync('eo-sync', { action: 'uninstallModule', data: { name, isLocal } });
 };
 window.eo.openApp = (inputArg) => {
   return ipcRenderer.sendSync('eo-sync', { action: 'openApp', data: inputArg });

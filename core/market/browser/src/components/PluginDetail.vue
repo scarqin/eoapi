@@ -17,8 +17,6 @@
           <p class="w-full h-20">{{ pluginDetail.description }}</p>
         </div>
         <div class="flex">
-          {{ pluginList }}{{ pluginDetail.name }}
-          {{ !pluginList.includes(pluginDetail.name) }}
           <div class="flex items-center" v-if="!pluginList.includes(pluginDetail.name)">
             <a-button type="primary mr-4" size="large" @click="installApp(pluginDetail.name)">安装</a-button>
             <span>安装完成后需要重启</span>

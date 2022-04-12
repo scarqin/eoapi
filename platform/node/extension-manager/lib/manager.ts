@@ -101,8 +101,7 @@ export class ModuleManager implements ModuleManagerInterface {
    * belongs为true，返回关联子模块集合
    * @param belongs
    */
-  getModules(belongs?: boolean): Map<string, ModuleInfo> {
-    belongs = belongs || false;
+  getModules(belongs: boolean = false): Map<string, ModuleInfo> {
     if (belongs) {
       return this.moduleBelongs();
     }
@@ -114,8 +113,7 @@ export class ModuleManager implements ModuleManagerInterface {
    * belongs为true，返回关联子模块集合
    * @param belongs
    */
-  getModule(moduleID: string, belongs?: boolean): ModuleInfo {
-    belongs = belongs || false;
+  getModule(moduleID: string, belongs: boolean = false): ModuleInfo {
     if (belongs) {
       return this.moduleBelongs().get(moduleID);
     }
