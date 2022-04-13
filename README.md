@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://github.com/eolinker/eoapi">
-    <img width="200" src="https://raw.githubusercontent.com/eolinker/eoapi/main/wiki/images/logo.png">
+    <img width="200" src="./wiki/images/logo.png">
   </a>
 </p>
 <h1 align="center">Eoapi</h1>
@@ -8,7 +8,7 @@
 A lightweight open source API tool.
 </div>
 
-![](https://raw.githubusercontent.com/eolinker/eoapi/main/wiki/images/preview_1.png)
+![](./wiki/images/preview_1.png)
 
 English | [简体中文](wiki/README.zh_CN.md)
 
