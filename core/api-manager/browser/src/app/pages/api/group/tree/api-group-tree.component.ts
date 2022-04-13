@@ -170,7 +170,6 @@ export class ApiGroupTreeComponent implements OnInit, OnDestroy {
     inArg.event.stopPropagation();
     this.messageService.send({ type: inArg.eventName, data: inArg.node });
   }
-
   /**
    * Group tree item click.
    *

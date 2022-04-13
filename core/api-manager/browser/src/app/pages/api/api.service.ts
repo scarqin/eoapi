@@ -39,4 +39,10 @@ export class ApiService {
       this.messageService.send({ type: 'bulkDeleteApi', data: { uuids: apis } });
     }
   }
+  export(apiData: ApiData){
+    console.log(apiData);
+  }
+  bulkExport(groups){
+
+  }
 }

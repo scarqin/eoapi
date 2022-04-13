@@ -16,7 +16,7 @@
     "start:workbench": "cd workbench/browser&&npm start",
     "build:workbench": "cd workbench/browser&&npm run build",
     "install:market": "cd core/market/browser && npm install",
-    "start:market": "cd core/market/browser && npm run serve",
+    "start1:market": "cd core/market/browser && npm run serve",
     "build:market": "cd core/market/browser && npm run build",
     "install:node-electron": "electron-builder install-app-deps",
     "electron:serve": "wait-on tcp:4200 && npm run electron:dev",
