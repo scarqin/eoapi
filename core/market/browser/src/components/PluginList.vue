@@ -26,7 +26,10 @@
       :key="index"
       @click="handleClick(it)"
     >
-      <i class="block w-20 h-20 bg-cover bg-center bg-no-repeat" :style="{ backgroundImage: `url(${it.logo})` }"></i>
+      <i
+        class="block w-20 h-20 bg-cover bg-center bg-no-repeat"
+        :style="{ backgroundImage: `url(${it.logo || ''})` }"
+      ></i>
       <span>{{ it.name }}</span>
       <span>{{ it.author }}</span>
       <div class="desc">{{ it.description }}</div>
@@ -51,10 +54,6 @@ const handleClick = ({ name }) => {
 const searchPlugin = async (type = 'all') => {
   if (type === 'local') {
     const map = window.eo.getModules();
-    console.log(
-      '>>?',
-      [...map].map((it) => it[1])
-    );
     return [...map].map((it) => it[1]);
   }
   const [res, err] = await getList();

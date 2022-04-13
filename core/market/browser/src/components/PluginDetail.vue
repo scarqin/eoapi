@@ -6,7 +6,7 @@
     <div class="flex p-8">
       <i
         class="block h-40 w-40 bg-cover bg-center bg-no-repeat mr-8"
-        :style="{ backgroundImage: `url(${pluginDetail.logo})` }"
+        :style="{ backgroundImage: `url(${pluginDetail.logo || ''})` }"
       ></i>
       <div class="flex flex-col flex-1">
         <div class="flex flex-col">
