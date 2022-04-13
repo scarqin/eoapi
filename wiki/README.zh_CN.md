@@ -1,7 +1,8 @@
 <p align="center">
   <a href="https://github.com/eolinker/eoapi">
-    <img width="200" src="https://raw.githubusercontent.com/eolinker/eoapi/main/src/assets/icons/128x128.png">
+    <img width="200" src="./images/logo.png">
   </a>
+</p>
 </p>
 
 <h1 align="center">Eoapi</h1>
@@ -9,7 +10,7 @@
 一个轻量的开源 API 工具
 </div>
 
-![](https://raw.githubusercontent.com/eolinker/eoapi/main/wiki/preview_1.png?token=GHSAT0AAAAAABRGKRUBJ634JVP7XL7KWAECYP3J36Q)
+![](./images/preview_1.png)
 
 [English](README.md)｜简体中文
 

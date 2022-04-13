@@ -1,5 +1,5 @@
 {
-  "name": "eoapi-core",
+  "name": "eoapi",
   "version": "0.0.1",
   "main": "app/electron-main/main.js",
   "private": true,
@@ -11,7 +11,7 @@
     "build:app": "cd app/browser&&npm run build",
     "install:api-manager": "cd core/api-manager/browser&&npm ci",
     "start:api-manager": "cd core/api-manager/browser&&npm start",
-    "install:api-manager-node": "cd core/api-manager/node&&npm ci",
+    "build:api-manager": "cd core/api-manager/browser&&npm run build:prod",
     "install:workbench": "cd workbench/browser&&npm install",
     "start:workbench": "cd workbench/browser&&npm start",
     "build:workbench": "cd workbench/browser&&npm run build",
@@ -22,6 +22,7 @@
     "electron:serve": "wait-on tcp:4200 && npm run electron:dev",
     "electron:dev:static": "npm run electron:tsc && electron .",
     "electron:dev": "npm run electron:tsc && electron . --development",
+    "electron:build": "npm-run-all -p build:* && npm run electron:tsc && electron-builder build",
     "release": "electron-builder",
     "electron:tsc": "tsc -p tsconfig.json"
   },
@@ -32,7 +33,12 @@
     "electron-log": "^4.4.6",
     "electron-updater": "^4.6.5",
     "resolve": "^1.22.0",
-    "rxjs": "7.5.5"
+    "rxjs": "7.5.5",
+    "content-disposition": "^0.5.4",
+    "crypto-js": "^4.1.1",
+    "form-data": "^4.0.0",
+    "iconv-lite": "^0.6.3",
+    "xml2js": "^0.4.23"
   },
   "devDependencies": {
     "@types/cross-spawn": "6.0.2",
