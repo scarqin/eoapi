@@ -1,12 +1,15 @@
 import { Injectable } from '@angular/core';
-import { NzModalService } from 'ng-zorro-antd/modal';
+import { NzModalRef, NzModalService } from 'ng-zorro-antd/modal';
 import { ApiData, StorageHandleResult, StorageHandleStatus } from '../../../../../../../platform/browser/IndexedDB';
+import { ExportApiComponent } from '../../shared/components/export-api/export-api.component';
 import { MessageService } from '../../shared/services/message';
+import { ModalService } from '../../shared/services/modal.service';
 import { StorageService } from '../../shared/services/storage';
 @Injectable()
 export class ApiService {
   constructor(
-    private modalService: NzModalService,
+    private nzModalService: NzModalService,
+    private modalService: ModalService,
     private messageService: MessageService,
     private storage: StorageService
   ) {}
@@ -20,7 +23,7 @@ export class ApiService {
   }
 
   delete(apiData: ApiData): void {
-    this.modalService.confirm({
+    this.nzModalService.confirm({
       nzTitle: '删除确认?',
       nzContent: `确认要删除数据 <strong title="${apiData.name}">${
         apiData.name.length > 50 ? apiData.name.slice(0, 50) + '...' : apiData.name
@@ -39,10 +42,16 @@ export class ApiService {
       this.messageService.send({ type: 'bulkDeleteApi', data: { uuids: apis } });
     }
   }
-  export(apiData: ApiData){
-    console.log(apiData);
+  export(apiData: ApiData) {
+    const modal: NzModalRef = this.modalService.create({
+      nzTitle: "导出 API",
+      nzContent: ExportApiComponent,
+      nzClosable: false,
+      nzComponentParams:{},
+      nzOnOk() {
+        modal.componentInstance.submit();
+      },
+    });
   }
-  bulkExport(groups){
-
-  }
+  bulkExport(groups) {}
 }

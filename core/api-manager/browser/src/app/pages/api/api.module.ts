@@ -11,7 +11,8 @@ import { ParamsImportModule } from '../../shared/components/params-import/params
 
 import { ApiComponent } from './api.component';
 import { ApiGroupEditComponent } from './group/edit/api-group-edit.component';
-
+import { ExportApiComponent } from '../../shared/components/export-api/export-api.component';
+import { NzRadioModule } from 'ng-zorro-antd/radio';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzTabsModule } from 'ng-zorro-antd/tabs';
@@ -29,7 +30,7 @@ import { ApiService } from './api.service';
 import { ElectronService } from '../../core/services';
 import { StorageService } from '../../shared/services/storage';
 
-const COMPONENTS = [ApiComponent, ApiGroupEditComponent, ApiGroupTreeComponent];
+const COMPONENTS = [ApiComponent, ApiGroupEditComponent, ApiGroupTreeComponent, ExportApiComponent];
 @NgModule({
   imports: [
     FormsModule,
@@ -46,6 +47,7 @@ const COMPONENTS = [ApiComponent, ApiGroupEditComponent, ApiGroupTreeComponent];
     NzTreeModule,
     NzFormModule,
     NzInputModule,
+    NzRadioModule,
     NzDropDownModule,
     ParamsImportModule,
     EouiModule,
