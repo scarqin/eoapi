@@ -6,6 +6,7 @@ dist/
 /out-tsc
 /app-builds
 /release
+*~
 *.js
 *.js.map
 *.webpack.js
