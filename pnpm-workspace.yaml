@@ -1,3 +1,4 @@
 src:
   - workbench/browser/*
   - core/market/browser/*
+  - app
