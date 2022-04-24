@@ -18,12 +18,8 @@ dist/
 
 # dependencies
 node_modules
-<<<<<<< HEAD
-# package-lock.json
-=======
 package-lock.json
 .pnpm-debug.log
->>>>>>> f1ba529 (update)
 
 # IDEs and editors
 .idea
