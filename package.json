@@ -10,7 +10,6 @@
     "postinstall": "electron-builder install-app-deps",
     "start": "npm-run-all -p startall electron:serve",
     "startall": "npm-run-all -p start:*",
-    "run-z": "run-z start:workbench, start:market, electron:serve",
     "start:workbench": "cd src/workbench/browser&&npm start",
     "build:workbench": "cd src/workbench/browser&&npm run build",
     "test:workbench": "cd src/workbench/browser&&npm run test",
@@ -52,7 +51,6 @@
     "eslint-plugin-jsdoc": "37.9.7",
     "eslint-plugin-prefer-arrow": "1.2.3",
     "npm-run-all": "4.1.5",
-    "run-z": "1.10.0",
     "ts-node": "10.7.0",
     "typescript": "~4.6.2",
     "wait-on": "6.0.1"
