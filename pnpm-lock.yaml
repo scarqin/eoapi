@@ -157,6 +157,8 @@ importers:
       '@angular/platform-browser-dynamic': 13.2.6
       '@angular/router': 13.2.6
       '@angular/upgrade': ^13.2.6
+      '@ant-design/icons-angular': 13.1.0
+      '@babel/runtime': 7.17.9
       '@ngx-translate/core': 14.0.0
       '@ngx-translate/http-loader': 7.0.0
       '@ngxs/store': 3.7.3
@@ -200,6 +202,7 @@ importers:
       '@angular/platform-browser-dynamic': 13.2.6_f5b2df82d19ef2a7fbce664edb009a33
       '@angular/router': 13.2.6_86425e7777f7860151d5de03ba245de0
       '@angular/upgrade': 13.3.4_ba4957c6ea19323bb500434c1c926493
+      '@ant-design/icons-angular': 13.1.0_86425e7777f7860151d5de03ba245de0
       '@ngxs/store': 3.7.3_@angular+core@13.2.6+rxjs@7.5.5
       angular: 1.8.2
       brace: 0.11.1
@@ -219,6 +222,7 @@ importers:
       '@angular-eslint/template-parser': 13.1.0_eslint@8.10.0+typescript@4.6.3
       '@angular/cli': 13.2.6
       '@angular/compiler-cli': 13.2.6_534b99c54874bb2d78fe80139071ffcc
+      '@babel/runtime': 7.17.9
       '@ngx-translate/core': 14.0.0_@angular+core@13.2.6+rxjs@7.5.5
       '@ngx-translate/http-loader': 7.0.0_37dc59143bf5b7b3fff1af5ef88489bf
       '@types/jasmine': 3.10.3
@@ -9241,7 +9245,7 @@ packages:
     dev: true
 
   /image-size/0.5.5:
-    resolution: {integrity: sha1-Cd/Uq50g4p6xw+gLiZA3jfnjy5w=}
+    resolution: {integrity: sha512-6TDAlDPZxUFCv+fuOkIoXT/V/f3Qbq8e37p+YOiYrUv3v9cc3/6x78VdfPgFVaB9dZYeLUfKgHRebpkm/oP2VQ==}
     engines: {node: '>=0.10.0'}
     hasBin: true
     requiresBuild: true
@@ -12656,7 +12660,7 @@ packages:
   /regenerator-transform/0.15.0:
     resolution: {integrity: sha512-LsrGtPmbYg19bcPHwdtmXwbW+TqNvtY4riE3P83foeHRroMbH6/2ddFBfab3t7kbzc7v7p4wbkIecHImqt0QNg==}
     dependencies:
-      '@babel/runtime': 7.16.7
+      '@babel/runtime': 7.17.9
     dev: true
 
   /regex-parser/2.2.11:
