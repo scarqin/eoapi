@@ -1,4 +1,4 @@
-import { whatType, whatTextType } from '..';
+import { whatType, whatTextType } from '../index';
 import { ApiBodyType, JsonRootType } from '../../../../../../platform/browser/IndexedDB';
 import { flatData } from '../tree/tree.utils';
 
