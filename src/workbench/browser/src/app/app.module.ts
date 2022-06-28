@@ -1,6 +1,6 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { NgModule, CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA } from '@angular/core';
+import { NgModule, CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA, LOCALE_ID } from '@angular/core';
 import { EouiModule } from 'eo/workbench/browser/src/app/eoui/eoui.module';
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
@@ -45,6 +45,7 @@ import { BaseUrlInterceptor } from 'eo/workbench/browser/src/app/shared/services
     HttpStorage,
     NzMessageService,
     NzModalService,
+    { provide: LOCALE_ID, useValue: 'zh-ch' },
     {
       provide: '$scope',
       useFactory: (i) => i.get('$rootScope'),
