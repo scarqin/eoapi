@@ -209,7 +209,6 @@ export interface ApiTestHistoryFrame {
     protocol: string;
     method: string;
     requestHeaders: any | ApiTestHeaders[];
-    requestBodyJsonType: JsonRootType | string;
     requestBodyType: string | 'formData' | 'raw';
     requestBody: any | object[] | string;
   };
@@ -220,7 +219,7 @@ export interface ApiTestHistoryFrame {
    * @type {object}
    */
   response: {
-    headers: object[];
+    headers: any[];
     statusCode: number;
     body: string;
     contentType: string;

@@ -24,7 +24,7 @@ import { ApiParamsNumPipe } from '../../../../shared/pipes/api-param-num.pipe';
 import { ApiEditService } from 'eo/workbench/browser/src/app/pages/api/http/edit/api-edit.service';
 import { ApiEditUtilService } from './api-edit-util.service';
 import { EoMessageService } from '../../../../eoui/message/eo-message.service';
-import { after } from 'lodash-es';
+import { generateRestFromUrl } from 'eo/workbench/browser/src/app/utils/api';
 @Component({
   selector: 'eo-api-edit-edit',
   templateUrl: './api-edit.component.html',
@@ -84,8 +84,9 @@ export class ApiEditComponent implements OnInit, OnDestroy {
         this.model = result;
       }
     }
-    //! Rest may generate from url
-    this.watchUri();
+    //* Rest need generate from url from initial model
+    this.resetRestFromUrl(this.model.uri);
+
     //Storage origin api data
     if (!this.initialModel) {
       if (!id) {
@@ -175,13 +176,8 @@ export class ApiEditComponent implements OnInit, OnDestroy {
     this.destroy$.next();
     this.destroy$.complete();
   }
-  private watchUri() {
-    this.validateForm
-      .get('uri')
-      ?.valueChanges.pipe(debounceTime(300), takeUntil(this.destroy$))
-      .subscribe((url) => {
-        this.apiEditUtil.generateRestFromUrl(url, this.model.restParams);
-      });
+  private resetRestFromUrl(url: string) {
+    this.model.restParams = generateRestFromUrl(url, this.model.restParams);
   }
   private getApiGroup() {
     this.groups = [];
@@ -250,5 +246,12 @@ export class ApiEditComponent implements OnInit, OnDestroy {
         this.modelChange.emit(this.model);
       }, 0);
     });
+    //watch uri
+    this.validateForm
+      .get('uri')
+      ?.valueChanges.pipe(debounceTime(300), takeUntil(this.destroy$))
+      .subscribe((url) => {
+        this.resetRestFromUrl(url);
+      });
   }
 }
