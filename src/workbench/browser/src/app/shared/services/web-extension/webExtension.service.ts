@@ -1,9 +1,6 @@
 import { Injectable } from '@angular/core';
-import { WebService } from 'eo/workbench/browser/src/app/core/services';
-import { NzMessageService } from 'ng-zorro-antd/message';
-import { StorageUtil } from '../../../utils/storage/Storage';
-import { FeatureInfo } from 'eo/platform/node/extension-manager/types';
 import { DISABLE_EXTENSION_NAMES } from 'eo/workbench/browser/src/app/shared/constants/storageKeys';
+import StorageUtil from 'eo/workbench/browser/src/app/utils/storage/Storage';
 
 type ExtensionItem = {
   name: string;
@@ -14,59 +11,49 @@ type ExtensionItem = {
 };
 
 const extKey = 'ext_installed_list';
-const defaultExtensions = ['eoapi-export-openapi', 'eoapi-import-openapi'];
 
+//* Web Extension manage service
+//! Can't import by other component,please use ExtensionService
 @Injectable({
-  providedIn: 'root',
+  providedIn: 'root'
 })
 export class WebExtensionService {
   installedList: ExtensionItem[] = StorageUtil.get(extKey, []);
   disabledExtensionNames = [];
 
-  constructor(private message: NzMessageService, private webService: WebService) {}
-
-  init() {
-    if (this.webService.isWeb) {
-      defaultExtensions.forEach((n) => {
-        const isInstall = this.getExtensionByName(n);
-        isInstall || this.installedList.push({ name: n } as any);
-      });
-      this.installedList.forEach((n) => {
-        this.installExtension(n.name);
-      });
-    }
-  }
-
-  async installExtension(extName: string) {
-    const res = await fetch(`https://unpkg.com/${extName}`);
+  constructor() {}
+  async installExtension(extName: string, version = 'latest', entry = '') {
+    const url = `${extName}@${version}${entry ? `/${entry}` : entry}`;
+    const fullPath = new URL(url, 'https://unpkg.com');
+    const res = await fetch(fullPath);
     const data = await res.text();
     if (res.status === 200) {
       this.insertScript(data);
-      const pkgJson = await this.getPkgInfo(extName);
+      const pkgJson = await this.getPkgInfo(extName, version);
       const pkgObj = typeof pkgJson === 'object' ? pkgJson : JSON.parse(pkgJson);
-      const oldIndex = this.installedList.findIndex((n) => n.name === extName);
+      const oldIndex = this.installedList.findIndex(n => n.name === extName);
       this.installedList.splice(oldIndex, oldIndex === -1 ? 0 : 1, {
         name: extName,
         disable: false,
         version: pkgObj.version,
         url: res.url,
-        pkgInfo: pkgObj,
+        pkgInfo: pkgObj
       });
       StorageUtil.set(extKey, this.installedList);
       return true;
     } else {
-      this.message.info(data);
+      pcConsole.error(`[Install package] ${data}`);
+      // this.message.info(data);
       return false;
     }
   }
-
-  unInstallExtension(extName: string) {
-    this.installedList = this.installedList.filter((n) => n.name !== extName);
-    StorageUtil.set(extKey, this.installedList);
+  getExtensions() {
+    return this.installedList.map(n => [n.name, n.pkgInfo]);
   }
-
-  getExtensionByName(extName: string) {
-    return this.installedList.find((n) => n.name === extName);
+  unInstallExtension(extName: string): boolean {
+    this.installedList = this.installedList.filter(n => n.name !== extName);
+    StorageUtil.set(extKey, this.installedList);
+    return true;
   }
 
   isEnable(name: string) {
@@ -97,32 +84,8 @@ export class WebExtensionService {
     document.head.appendChild(script);
   }
 
-  async getPkgInfo(extName: string) {
-    const res = await fetch(`https://unpkg.com/${extName}/package.json`);
+  async getPkgInfo(extName: string, version = 'latest') {
+    const res = await fetch(`https://unpkg.com/${extName}@${version}/package.json`);
     return res.json();
-  }
-
-  importModule = async (extName: string) => {
-    if (!window[extName]) {
-      await this.installExtension(extName);
-    }
-    return window[extName];
-  };
-
-  getFeatures(featureName: string): Map<string, FeatureInfo> {
-    if (window.eo?.getFeature) {
-      return window.eo.getFeature(featureName);
-    }
-    const featureMap = new Map<string, FeatureInfo>([]);
-    this.installedList.forEach((item) => {
-      const feature: FeatureInfo = item.pkgInfo?.features?.[featureName];
-      if (feature) {
-        featureMap.set(item.name, feature);
-      }
-    });
-    if (featureMap.size === 0) {
-      return;
-    }
-    return featureMap;
   }
 }
