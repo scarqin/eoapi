@@ -1,9 +1,14 @@
+import { isNumber } from 'lodash-es';
+
 window.pcConsole = {
   log(...args) {
     console.log('%c EO_LOG: ', 'background-color:#2a4073; color: #fff;padding:3px;box-sizing: border-box;border-radius: 3px;', ...args);
   },
   warn(...args) {
     console.warn('%c EO_WARN:', 'background-color:#ffd900;padding:3px;box-sizing: border-box;border-radius: 3px;', ...args);
+  },
+  success(...args) {
+    console.log('%c EO_SUCCESS: ', 'background-color:#52c41a; color: #fff;padding:3px;box-sizing: border-box;border-radius: 3px;', ...args);
   },
   error(...args) {
     console.error(
@@ -68,25 +73,28 @@ export const whatTextType = (tmpText): 'xml' | 'json' | 'html' | 'text' => {
   }
 };
 /**
- * reverse object key and value
+ * Reverse Typescript enum key and value
  *
- * @param obj
+ * @param enum
  */
-export const reverseObj = obj =>
-  Object.keys(obj).reduce((acc, key) => {
-    acc[obj[key]] = key;
+export const enumsToObject = tEnum =>
+  Object.entries<any>(tEnum).reduce((acc, [key, value]) => {
+    acc[value] = key;
     return acc;
   }, {});
 /**
- * reverse object key and value
+ * Reverse Typescript enums key and value
  *
- * @param obj
+ * @param enum
  */
-export const objectToArray = obj =>
-  Object.keys(obj).map(val => ({
-    key: val,
-    value: obj[val]
-  }));
+export const enumsToArr = tEnum =>
+  Object.values(tEnum)
+    .filter(val => !isNumber(val))
+    .map((val: string) => ({
+      key: val,
+      value: tEnum[val]
+    }));
+
 export const isEmptyObj = obj => obj && Object.keys(obj).length === 0 && Object.getPrototypeOf(obj) === Object.prototype;
 export const isEmptyValue = obj => {
   const list = Object.keys(obj);
@@ -285,4 +293,45 @@ export const compareVersion = (v1, v2) => {
   const _r = parseInt(_v1[0] || 0, 10) - parseInt(_v2[0] || 0, 10);
 
   return _r === 0 && v1 !== v2 ? compareVersion(_v1.splice(1).join('.'), _v2.splice(1).join('.')) : _r;
+};
+
+// more see https://developer.mozilla.org/zh-CN/docs/Glossary/Base64#solution_4_–_escaping_the_string_before_encoding_it
+export const b64DecodeUnicode = (str: string) => {
+  // Going backwards: from bytestream, to percent-encoding, to original string.
+  return decodeURIComponent(
+    window
+      .atob(str)
+      .split('')
+      .map(function (c) {
+        return `%${`00${c.charCodeAt(0).toString(16)}`.slice(-2)}`;
+      })
+      .join('')
+  );
+};
+
+export const decodeUnicode = (str: string) => {
+  return unescape(str.replace(/\\u/gi, '%u'));
+};
+
+export const JSONParse = (text, defaultVal = {}, reviver?) => {
+  if (typeof text === 'object') return text;
+  try {
+    return JSON.parse(text, reviver);
+  } catch (ex) {
+    pcConsole.warn('JSONParse error:', ex);
+    return defaultVal;
+  }
+};
+
+export const waitNextTick = () =>
+  new Promise(resolve => {
+    setTimeout(() => resolve(true), 0);
+  });
+
+export const getUrlParams = url => {
+  const u = new URL(url);
+  const s = new URLSearchParams(u.search);
+  const obj = {};
+  s.forEach((v, k) => (obj[k] = v));
+  return obj;
 };

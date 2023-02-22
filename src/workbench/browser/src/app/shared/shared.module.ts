@@ -10,7 +10,7 @@ import { EoNgFeedbackAlertModule, EoNgFeedbackTooltipModule, EoNgFeedbackMessage
 import { EoNgInputModule } from 'eo-ng-input';
 import { EoNgRadioModule } from 'eo-ng-radio';
 import { EoNgSelectModule } from 'eo-ng-select';
-import { DownloadClienteComponent } from 'eo/workbench/browser/src/app/shared/components/download-client.component';
+import { TraceDirective } from 'eo/workbench/browser/src/app/shared/services/trace.directive';
 import { NzDividerModule } from 'ng-zorro-antd/divider';
 import { NzEmptyModule } from 'ng-zorro-antd/empty';
 import { NzFormModule } from 'ng-zorro-antd/form';
@@ -23,18 +23,20 @@ import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzTypographyModule } from 'ng-zorro-antd/typography';
 
 import { EoIconparkIconModule } from '../modules/eo-ui/iconpark-icon/eo-iconpark-icon.module';
+import { DownloadClientModalComponent } from './components/download-client.component';
 import { ExtensionAppComponent } from './components/extension-app/extension-app.component';
 import { ClickStopPropagationDirective, FormFocusDirective } from './directives';
 
-const COMPONENTS = [DownloadClienteComponent, ExtensionAppComponent];
-const DIRECTIVES = [ClickStopPropagationDirective, FormFocusDirective];
+const COMPONENTS = [DownloadClientModalComponent, ExtensionAppComponent];
+const DIRECTIVES = [ClickStopPropagationDirective, FormFocusDirective, TraceDirective];
+
 const SHARED_UI_MODULE = [
   NzFormModule,
   EoNgButtonModule,
+  EoNgDropdownModule,
   EoNgCheckboxModule,
   EoNgSelectModule,
   EoNgInputModule,
-  EoNgDropdownModule,
   EoNgRadioModule,
   EoNgAutoCompleteModule,
   EoNgFeedbackMessageModule,
@@ -50,8 +52,8 @@ const SHARED_UI_MODULE = [
   NzModalModule,
   NzListModule,
   NzPopconfirmModule
-] as const;
-const SHARED_MODULE = [CommonModule, FormsModule, RouterModule, ReactiveFormsModule] as const;
+];
+const SHARED_MODULE = [CommonModule, FormsModule, RouterModule, ReactiveFormsModule];
 
 @NgModule({
   imports: [...SHARED_MODULE, ...SHARED_UI_MODULE],

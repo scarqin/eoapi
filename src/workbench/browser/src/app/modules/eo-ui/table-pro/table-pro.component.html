@@ -1,5 +1,6 @@
 <!-- <span class="color-[#999]">nzData:</span>
-<div class="mx-2">{{ nzData | json }}</div> -->
+<div class="mx-2">{{ nzData| json }}</div> -->
+
 <!-- <span class="color-[#999]">nzDataItem:</span>
 <div class="mx-2">{{ nzDataItem | json }}</div> -->
 <!-- {{ setting | json }} -->
@@ -13,6 +14,7 @@
   [nzIsLevel]="setting.isLevel"
   [nzDraggable]="setting.rowSortable"
   [nzTbody]="tbodyConf"
+  (nzResizeEnd)="nzResizeColumn($event)"
   [nzExpand]="nzExpand"
   [nzPrimaryKey]="setting.primaryKey"
   [nzChildKey]="tableConfig.childKey"
@@ -43,7 +45,6 @@
       [nzCondition]="!btnItem.confirm"
       (nzOnConfirm)="btnClick(btnItem, index, item, apis)"
       eoNgFeedbackTooltip
-      i18n-nzTooltipTitle
       nzTooltipTitle="{{ btnItem.title }}"
       class="mr-btnbase eo-list-btn"
     >
@@ -63,6 +64,7 @@
       nzType="text"
       i18n-nzTooltipTitle
       eoNgFeedbackTooltip
+      nzClickHide="false"
       [nzTooltipTitle]="tableConfig.columnVisibleTitle"
       *ngIf="setting?.toolButton?.columnVisible"
       [nzDropdownMenu]="dropdownMenTmp"
@@ -73,10 +75,8 @@
     </button>
     <eo-ng-dropdown-menu #dropdownMenTmp>
       <ul nz-menu>
-        <li nz-menu-item *ngFor="let item of columnVisibleMenus" (ngModelChange)="toggleColumnVisible(item, $event)">
-          <label (click)="$event.stopPropagation()" eo-ng-checkbox [(ngModel)]="item.checked" (ngModelChange)="toggleColumnVisible(item)">{{
-            item.title
-          }}</label>
+        <li nz-menu-item *ngFor="let item of columnVisibleMenus" (click)="toggleColumnVisible(item, $event)">
+          <label eo-ng-checkbox [(ngModel)]="item.checked">{{ item.title }}</label>
         </li>
       </ul>
     </eo-ng-dropdown-menu>

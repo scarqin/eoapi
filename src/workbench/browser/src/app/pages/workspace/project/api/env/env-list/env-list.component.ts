@@ -2,9 +2,13 @@ import { Component, OnDestroy, Output, EventEmitter } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { EffectService } from 'eo/workbench/browser/src/app/shared/store/effect.service';
 import { StoreService } from 'eo/workbench/browser/src/app/shared/store/state.service';
+import { waitNextTick } from 'eo/workbench/browser/src/app/utils/index.utils';
+import { autorun, reaction, values } from 'mobx';
 import { filter, Subject } from 'rxjs';
 
 import { MessageService } from '../../../../../../shared/services/message';
+import { ApiEffectService } from '../../service/store/api-effect.service';
+import { ApiStoreService } from '../../service/store/api-state.service';
 @Component({
   selector: 'eo-env-list',
   templateUrl: './env-list.component.html',
@@ -13,43 +17,56 @@ import { MessageService } from '../../../../../../shared/services/message';
 export class EnvListComponent implements OnDestroy {
   // @ViewChild('table') table: EoTableComponent; // * child component ref
   modalTitle = $localize`:@@New Environment:New Environment`;
-  id;
+  nzTreeSelect = [];
+  envList = [];
   private destroy$: Subject<void> = new Subject<void>();
   constructor(
-    public store: StoreService,
+    public store: ApiStoreService,
+    private globalStore: StoreService,
     private router: Router,
     private route: ActivatedRoute,
-    private effect: EffectService,
+    private effect: ApiEffectService,
     private message: MessageService
   ) {
-    this.getIDFromRoute();
-    this.router.events.pipe(filter(event => event instanceof NavigationEnd)).subscribe((res: any) => {
-      this.getIDFromRoute();
+    autorun(() => {
+      if (this.store.getEnvList) {
+        this.envList = (this.store.getEnvList || []).map(n => ({ ...n, title: n.name, key: n.id }));
+        this.setSelectKeys();
+      }
     });
+    this.setSelectKeys();
+    reaction(
+      () => this.globalStore.getUrl,
+      url => {
+        this.setSelectKeys();
+      }
+    );
   }
-  getIDFromRoute() {
+  setSelectKeys() {
     const uuid = this.route.snapshot.queryParams.uuid;
-    this.id = this.router.url.includes('home/workspace/project/api/env/edit') && uuid ? Number(this.route.snapshot.queryParams.uuid) : null;
+    const id =
+      this.router.url.includes('home/workspace/project/api/env/edit') && uuid ? Number(this.route.snapshot.queryParams.uuid) : null;
+    this.nzTreeSelect = [id];
   }
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
   }
 
-  handleDeleteEnv($event, uuid: string) {
+  handleDeleteEnv($event, id: string) {
     $event?.stopPropagation();
     // * delete localstrage
-    this.effect.deleteEnv(uuid);
+    this.effect.deleteEnv(id);
     this.message.send({
       type: 'deleteEnvSuccess',
       data: {
-        uuids: [uuid]
+        uuids: [id]
       }
     });
   }
-  editEnv(item) {
+  editEnv($event) {
     this.router.navigate(['/home/workspace/project/api/env/edit'], {
-      queryParams: { uuid: item.uuid }
+      queryParams: { uuid: $event.node.key }
     });
   }
   addEnv(pid = 1) {

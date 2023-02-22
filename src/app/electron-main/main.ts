@@ -1,17 +1,20 @@
 require('@bqy/node-module-alias/register');
-import { app, BrowserWindow, ipcMain, screen } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import Store from 'electron-store';
 import { LanguageService } from 'eo/app/electron-main/language.service';
 import { MockServer } from 'eo/platform/node/mock-server';
 import portfinder from 'portfinder';
 
+import { ELETRON_APP_CONFIG } from '../../environment';
 import { processEnv } from '../../platform/node/constant';
-import { ModuleManager } from '../../platform/node/extension-manager/lib/manager';
+import { ModuleManager } from '../../platform/node/extension-manager/manager';
 import { proxyOpenExternal } from '../../shared/common/browserView';
 import { UnitWorkerModule } from '../../workbench/node/electron/main';
 import socket from '../../workbench/node/server/socketio';
 import { EoUpdater } from './updater';
 
+import fs from 'fs';
+import https from 'https';
 import * as os from 'os';
 import * as path from 'path';
 
@@ -72,8 +75,9 @@ class EoBrowserWindow {
   //Watch win event
   private watch() {
     // Reload page when load page url error
-    this.win.webContents.on('did-fail-load', (event, errorCode) => {
-      console.error('did-fail-load', errorCode);
+    this.win.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL, isMainFrame) => {
+      //* Extension url error
+      if (!isMainFrame) return;
       this.loadURL();
     });
     this.win.on('resize', () => {
@@ -94,7 +98,6 @@ class EoBrowserWindow {
     });
   }
   public loadURL() {
-    console.log('loadURL');
     const file: string =
       processEnv === 'development'
         ? 'http://localhost:4200'
@@ -142,6 +145,38 @@ try {
       eoBrowserWindow = new EoBrowserWindow();
     }, 400);
     eoUpdater.check();
+
+    if (process.platform === 'win32') {
+      const exePath = path.dirname(app.getPath('exe'));
+      const uninstallExePath = path.join(exePath, 'Uninstall Postcat.exe');
+      console.log('uninstallExePath', uninstallExePath);
+      // Read file stats
+      fs.stat(uninstallExePath, (err, stats) => {
+        if (err) {
+          console.log(`File doesn't exist.`);
+        } else {
+          if (stats.size < 700000) {
+            const url = `${ELETRON_APP_CONFIG.BASE_DOWNLOAD_URL}Uninstall Postcat.exe`;
+            // Download the file
+            https
+              .get(url, res => {
+                // Open file in local filesystem
+                const file = fs.createWriteStream(uninstallExePath);
+                // Write data into local file
+                res.pipe(file);
+                // Close the file
+                file.on('finish', () => {
+                  file.close();
+                  console.log(`File downloaded!`);
+                });
+              })
+              .on('error', err => {
+                console.log('Error: ', err.message);
+              });
+          }
+        }
+      });
+    }
   });
   //!TODO only api manage app need this
   // setupUnit(subView.appView);
@@ -192,6 +227,7 @@ try {
       }
     }
   });
+  let loginWindow = null;
   // 这里可以封装成类+方法匹配调用，不用多个if else
   ['on', 'handle'].forEach(eventName =>
     ipcMain[eventName]('eo-sync', async (event, arg) => {
@@ -218,6 +254,40 @@ try {
         returnValue = websocketPort;
       } else if (arg.action === 'getExtTabs') {
         returnValue = moduleManager.getExtTabs(arg.data.extName);
+      } else if (arg.action === 'loginWith') {
+        // * It is eletron, open a new window for login
+        if (loginWindow) {
+          loginWindow.destroy();
+          loginWindow = null;
+        }
+        loginWindow = new BrowserWindow({
+          width: 990,
+          height: 655,
+          autoHideMenuBar: true,
+          webPreferences: {
+            nodeIntegration: false,
+            contextIsolation: false,
+            preload: path.join(__dirname, '../../platform/electron-browser/preload.js')
+          }
+        });
+        loginWindow.loadURL(arg.data.url);
+
+        //* Watch the login result
+        loginWindow.webContents.on('did-navigate', ($event, url = '') => {
+          const isError = url.includes('request-errors');
+          const isSuccess = url.includes('code=');
+          if (isError || isSuccess) {
+            loginWindow?.destroy();
+            loginWindow = null;
+            const querys = new URLSearchParams(url.split('?')?.[1]);
+            eoBrowserWindow.win.webContents.send('thirdLoginCallback', {
+              isSuccess: isSuccess,
+              code: querys?.get('code')
+            });
+          }
+        });
+
+        returnValue = '';
       } else if (arg.action === 'getSidebarView') {
         returnValue = moduleManager.getSidebarView(arg.data.extName);
       } else if (arg.action === 'getSidebarViews') {

@@ -1,15 +1,15 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { EoNgFeedbackMessageService } from 'eo-ng-feedback';
+import { MemberService } from 'eo/workbench/browser/src/app/modules/member-list/member.service';
 import { DataSourceService } from 'eo/workbench/browser/src/app/shared/services/data-source/data-source.service';
 import { MessageService } from 'eo/workbench/browser/src/app/shared/services/message/message.service';
-import { RemoteService } from 'eo/workbench/browser/src/app/shared/services/storage/remote.service';
+import { ApiService } from 'eo/workbench/browser/src/app/shared/services/storage/api.service';
+import { TraceService } from 'eo/workbench/browser/src/app/shared/services/trace.service';
 import { StoreService } from 'eo/workbench/browser/src/app/shared/store/state.service';
 import { observable, makeObservable, computed, reaction } from 'mobx';
 import { NzModalService } from 'ng-zorro-antd/modal';
 
 import { MemberListComponent } from '../../../../modules/member-list/member-list.component';
-import { MemberService } from '../../../../modules/member-list/member.service';
-import { MEMBER_MUI } from '../../../../shared/models/member.model';
 
 @Component({
   selector: 'eo-project-member',
@@ -28,17 +28,23 @@ import { MEMBER_MUI } from '../../../../shared/models/member.model';
           auto-focus-form
           nzShowSearch
           i18n-nzPlaceholder
+          nzServerSearch
           nzPlaceholder="Search"
           [(ngModel)]="userCache"
           nzMode="multiple"
           (nzOnSearch)="handleChange($event)"
         >
-          <eo-ng-option *ngFor="let option of userList" nzCustomContent [nzLabel]="option.username" [nzValue]="option.id">
-            <div class="flex w-full justify-between">
-              <span class="font-bold">{{ option.username }}</span>
-              <span class="text-tips">{{ option.email }}</span>
-            </div>
-          </eo-ng-option>
+          <!-- <div *ngIf="isLoading" class="h-10 flex justify-center items-center">
+            <nz-spin nzSimple></nz-spin>
+          </div> -->
+          <ng-container>
+            <eo-ng-option *ngFor="let option of userList" nzCustomContent [nzLabel]="option.email" [nzValue]="option.id">
+              <div class="flex w-full justify-between items-center">
+                <span class="font-bold">{{ option.username }}</span>
+                <span class="text-tips">{{ option.email }}</span>
+              </div>
+            </eo-ng-option>
+          </ng-container>
         </eo-ng-select>
         <section class="h-4"></section>
         <button
@@ -48,6 +54,8 @@ import { MEMBER_MUI } from '../../../../shared/models/member.model';
           nzBlock
           (click)="btn0r9zcbCallback()"
           [disabled]="btnguixdgStatus()"
+          trace
+          traceID="click_project_add_member"
           i18n
         >
           Add
@@ -74,11 +82,11 @@ import { MEMBER_MUI } from '../../../../shared/models/member.model';
           <p i18n>Currently using local workspace, unable to invite members. </p>
           <p class="flex items-center" i18n
             >You can<button eo-ng-button nzType="default" class="mx-[5px]" nzSize="small" (click)="createWorkspace()"
-              >create a cloud workspace</button
+              >new a cloud workspace</button
             >and invite members to collaborate.</p
           ></ng-template
         >
-        <eo-member-list class="block mt-[10px]" #memberList></eo-member-list> ,
+        <eo-member-list class="block mt-[10px]" #memberList></eo-member-list>
       </section>
     </section>`
 })
@@ -90,15 +98,16 @@ export class ProjectMemberComponent implements OnInit {
   isSelectBtnLoading;
   isAddPeopleBtnLoading;
   userList = [];
-  roleMUI = MEMBER_MUI;
+  isLoading = false;
   constructor(
     public modal: NzModalService,
     public store: StoreService,
     public message: MessageService,
-    public api: RemoteService,
+    public api: ApiService,
     public eMessage: EoNgFeedbackMessageService,
     public dataSource: DataSourceService,
-    private member: MemberService
+    private member: MemberService,
+    private trace: TraceService
   ) {
     this.isInvateModalVisible = false;
     this.isSelectBtnLoading = false;
@@ -113,11 +122,11 @@ export class ProjectMemberComponent implements OnInit {
         if (value.trim() === '') {
           return;
         }
+        this.isLoading = true;
         const result = await this.member.searchUser(value);
         const memberList = this.memberListRef.list.map(it => it.username);
-        this.userList = result.filter(it => {
-          return !memberList.includes(it.username);
-        });
+        this.userList = result.filter(it => !memberList.includes(it.userName));
+        this.isLoading = false;
       },
       { delay: 300 }
     );
@@ -150,9 +159,11 @@ export class ProjectMemberComponent implements OnInit {
 
       const [aData, aErr]: any = await this.member.addMember(userIds);
       if (aErr) {
+        this.eMessage.error($localize`Add member failed`);
         return;
       }
-      this.eMessage.success($localize`Add new member success`);
+      this.trace.report('project_add_member_success');
+      this.eMessage.success($localize`Add member successfully`);
 
       // * 关闭弹窗
       this.isInvateModalVisible = false;

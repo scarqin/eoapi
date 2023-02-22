@@ -8,16 +8,20 @@ import { interval } from 'rxjs';
 import { DataSourceService } from '../../shared/services/data-source/data-source.service';
 @Component({
   selector: 'eo-get-share-link',
-  template: `<button
+  template: `
+    <button
       eo-ng-button
       nzType="default"
-      class="mx-2 btn_scondary"
+      class="mx-2"
       nz-popover
-      *ngIf="!store.isShare && store.getUrl.includes('/home/workspace/project/api/http/test')"
+      *ngIf="store.getPageLevel === 'project'"
       [nzPopoverContent]="contentTemplate"
       nzPopoverPlacement="bottomRight"
+      nzPopoverOverlayClassName="background-popover"
       nzPopoverTrigger="click"
       (click)="handleGetShareLink()"
+      trace
+      traceID="click_share"
       i18n
     >
       Share
@@ -25,17 +29,23 @@ import { DataSourceService } from '../../shared/services/data-source/data-source
     <ng-template #contentTemplate>
       <div class="w-[360px] pb-4">
         <p i18n class="font-bold">Share via link</p>
-        <p i18n class="pb-2 text-xs text-[#999]">
+        <p i18n class="pb-2 text-xs text-tips">
           This link will be updated with the API content. Everyone can access it without logging in
         </p>
         <div class="flex items-center">
-          <span class="truncate flex-1">
-            {{ link }}
-          </span>
-          <button eo-ng-button nzType="text" (click)="handleCopy()"><eo-iconpark-icon name="copy"></eo-iconpark-icon></button>
+          <nz-spin *ngIf="!link" class="flex-1 mt-[10px]"></nz-spin>
+          <ng-container *ngIf="link">
+            <span class="truncate flex-1">
+              {{ link }}
+            </span>
+            <button eo-ng-button nzType="text" trace traceID="copy_share_link" (click)="handleCopy()"
+              ><eo-iconpark-icon name="copy"></eo-iconpark-icon
+            ></button>
+          </ng-container>
         </div>
       </div>
-    </ng-template> `
+    </ng-template>
+  `
 })
 export class GetShareLinkComponent {
   link;
@@ -45,9 +55,7 @@ export class GetShareLinkComponent {
     public store: StoreService,
     public dataSourceService: DataSourceService,
     private message: EoNgFeedbackMessageService
-  ) {
-    this.link = 'Please wait ...';
-  }
+  ) {}
   handleCopy() {
     if (this.isCopy) {
       return;

@@ -6,6 +6,7 @@ import { storageTab, TabItem, TabOperate } from 'eo/workbench/browser/src/app/mo
 import { MessageService } from 'eo/workbench/browser/src/app/shared/services/message';
 import { eoDeepCopy } from 'eo/workbench/browser/src/app/utils/index.utils';
 import { APP_CONFIG } from 'eo/workbench/browser/src/environments/environment';
+
 /**
  * Tab service operate tabs array add/replace/close...
  * Tab change by  url change(router event)
@@ -22,12 +23,17 @@ export class TabOperateService {
    */
   BASIC_TABS: Array<Partial<TabItem>>;
   setting = {
-    //* Cache pagedata in tab
-    disabledCache: false,
+    /**
+     * Cache pagedata in tab
+     * Force cache in production environment
+     */
+    disabledCache: APP_CONFIG.production ? false : false,
+    //* intial url followQueryParams
+    followQueryParams: true,
     //* Allow development mode debug not exist router at init
     allowNotExistRouter: !APP_CONFIG.production,
     //* Allow open new tab by url at init
-    allowOpenNewTabByUrl: false
+    allowOpenNewTabByUrl: true
   };
   constructor(
     private tabStorage: TabStorageService,
@@ -44,6 +50,7 @@ export class TabOperateService {
       : this.tabStorage.getPersistenceStorage({
           handleDataBeforeGetCache: inArg.handleDataBeforeGetCache
         });
+
     //parse result for router change
     const tabCache = this.filterValidTab(tabStorage);
     const validTabItem = this.generateTabFromUrl(this.router.url);
@@ -56,7 +63,8 @@ export class TabOperateService {
         url: this.router.url
       });
     };
-    //No cache
+
+    //If no cache
     if (!tabCache?.tabOrder?.length) {
       executeWhenNoTab();
       return;
@@ -96,6 +104,9 @@ export class TabOperateService {
     }
     //Tab from last choose
     const targetTab = this.getTabByIndex(tabCache.selectedIndex || 0);
+    if (this.setting.followQueryParams) {
+      targetTab.params = { ...validTabItem.params, ...targetTab.params };
+    }
     this.selectedIndex = tabCache.selectedIndex;
     this.navigateTabRoute(targetTab);
   }
@@ -184,7 +195,7 @@ export class TabOperateService {
    * @param url
    * @returns tabInfo
    */
-  getBasicInfoFromUrl(url): { uuid: number; pathname: string; params: any } {
+  getBasicInfoFromUrl(url): { uuid: string | number; pathname: string; params: any } {
     const urlArr = url.split('?');
     const params: any = {};
     const basicTab = this.BASIC_TABS.find(val => urlArr[0].includes(val.pathname));
@@ -258,10 +269,15 @@ export class TabOperateService {
       return;
     }
 
-    //same tab content,selected it
+    /**
+     * Exist same tab content,selected it
+     */
     if (existTab) {
       this.selectedIndex = this.tabStorage.tabOrder.findIndex(uuid => uuid === existTab.uuid);
       this.updateChildView();
+
+      //* Update tab info,maybe params changed
+      this.tabStorage.tabsByID.set(existTab.uuid, { ...existTab, params: { ...existTab.params, ...nextTab.params } });
       return;
     }
     //!Same params.uuid can only open one Tab

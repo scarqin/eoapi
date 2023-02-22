@@ -3,7 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { EoNgFeedbackMessageService } from 'eo-ng-feedback';
 import { DataSourceService } from 'eo/workbench/browser/src/app/shared/services/data-source/data-source.service';
 import { MessageService } from 'eo/workbench/browser/src/app/shared/services/message';
-import { StorageUtil } from 'eo/workbench/browser/src/app/utils/storage/Storage';
+import { StorageUtil } from 'eo/workbench/browser/src/app/utils/storage/storage.utils';
 
 import { SettingService } from '../settings.service';
 
@@ -12,10 +12,10 @@ import { SettingService } from '../settings.service';
   template: `
     <form nz-form nzLayout="vertical" [formGroup]="validateForm" (ngSubmit)="submitForm()">
       <nz-form-item>
-        <div class="text-[12px] mt-[8px] text-gray-400">
+        <div class="text-[12px] mt-[8px] text-tips">
           <p>
             <span i18n> Cloud Storage: Store data on the cloud for team collaboration and product use across devices.</span>
-            <a i18n href="https://docs.postcat.com/docs/storage.html" target="_blank" class="eo-link"> Learn more..</a>
+            <a i18n href="https://docs.postcat.com/docs/storage.html" target="_blank"> Learn more..</a>
           </p>
         </div>
       </nz-form-item>
@@ -79,14 +79,12 @@ export class DataStorageComponent implements OnInit {
       ...this.validateForm.value
     };
     const isSuccess = await this.dataSource.pingCloudServerUrl(this.validateForm.value['backend.url']);
-    console.log(isSuccess);
     if (isSuccess) {
       this.message.success($localize`Successfully connect to cloud`);
       StorageUtil.set('IS_SHOW_DATA_SOURCE_TIP', 'false');
       //Relogin to update user info
       this.messageS.send({ type: 'login', data: {} });
       this.saveConf();
-      this.messageS.send({ type: 'close-setting', data: {} });
     } else {
       this.message.error($localize`Failed to connect`);
     }

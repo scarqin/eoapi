@@ -1,13 +1,15 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { EoNgFeedbackMessageService } from 'eo-ng-feedback';
-import { ExtensionService } from 'eo/workbench/browser/src/app/pages/extension/extension.service';
 import { FeatureInfo } from 'eo/workbench/browser/src/app/shared/models/extension-manager';
-import { StorageRes, StorageResStatus } from 'eo/workbench/browser/src/app/shared/services/storage/index.model';
-import { StorageService } from 'eo/workbench/browser/src/app/shared/services/storage/storage.service';
+import { ExtensionService } from 'eo/workbench/browser/src/app/shared/services/extensions/extension.service';
+import { Message, MessageService } from 'eo/workbench/browser/src/app/shared/services/message';
+import { ApiService } from 'eo/workbench/browser/src/app/shared/services/storage/api.service';
 import { StoreService } from 'eo/workbench/browser/src/app/shared/store/state.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
-import StorageUtil from '../../../utils/storage/Storage';
+import StorageUtil from '../../../utils/storage/storage.utils';
 
 // const optionList = [
 //   {
@@ -44,6 +46,7 @@ import StorageUtil from '../../../utils/storage/Storage';
   selector: 'eo-import-api',
   template: `<extension-select
     [allowDrag]="true"
+    tipsType="importAPI"
     [(extension)]="currentExtension"
     [extensionList]="supportList"
     (uploadChange)="uploadChange($event)"
@@ -53,28 +56,43 @@ export class ImportApiComponent implements OnInit {
   supportList: any[] = [];
   currentExtension = StorageUtil.get('import_api_modal');
   uploadData = null;
-  featureMap = this.extensionService.getValidExtensionsByFature('importAPI');
+  featureMap: Map<string, FeatureInfo>;
+  private destroy$: Subject<void> = new Subject<void>();
+
   constructor(
     private router: Router,
-    private storage: StorageService,
     private eoMessage: EoNgFeedbackMessageService,
     private extensionService: ExtensionService,
-    private store: StoreService
+    private store: StoreService,
+    private apiService: ApiService,
+    private messageService: MessageService
   ) {}
   ngOnInit(): void {
+    this.initData();
+    this.messageService
+      .get()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((inArg: Message) => {
+        if (inArg.type === 'installedExtensionsChange') {
+          this.initData();
+        }
+      });
+  }
+  initData = () => {
+    this.featureMap = this.extensionService.getValidExtensionsByFature('importAPI');
+    this.supportList = [];
     this.featureMap?.forEach((data: FeatureInfo, key: string) => {
       this.supportList.push({
         key,
         ...data
       });
     });
-    {
-      const { key } = this.supportList.at(0);
-      if (!(this.currentExtension && this.supportList.find(val => val.key === this.currentExtension))) {
-        this.currentExtension = key || '';
-      }
+    if (!this.supportList.length) return;
+    const { key } = this.supportList.at(0);
+    if (!(this.currentExtension && this.supportList.find(val => val.key === this.currentExtension))) {
+      this.currentExtension = key || '';
     }
-  }
+  };
   uploadChange(data) {
     this.uploadData = data;
   }
@@ -89,48 +107,38 @@ export class ImportApiComponent implements OnInit {
     const feature = this.featureMap.get(this.currentExtension);
     const action = feature.action || null;
     const module = await this.extensionService.getExtensionPackage(this.currentExtension);
-    const { name, content } = this.uploadData;
+    let { name, content } = this.uploadData;
     try {
       const [data, err] = module[action](content);
-      // console.log('import data', structuredClone?.(data));
+      console.log('import data', window.structuredClone?.(data));
       if (err) {
         console.error(err.msg);
         callback(false);
         return;
       }
-      // The datastructure may has circular reference,decycle by reset object;
-      const decycle = (obj, parent?) => {
-        const parentArr = parent || [obj];
-        for (const i in obj) {
-          if (typeof obj[i] === 'object') {
-            parentArr.forEach(pObj => {
-              if (pObj === obj[i]) {
-                obj[i] = {
-                  description: $localize`Same as the parent's field ${obj[i].name}`,
-                  example: '',
-                  name: obj[i].name,
-                  required: true,
-                  type: obj[i].type
-                };
-              }
-            });
-            decycle(obj[i], [...parentArr, obj[i]]);
-          }
-        }
-        return obj;
-      };
-      const params = [this.store.getCurrentProjectID, decycle(data)];
-      this.storage.run('projectImport', params, (result: StorageRes) => {
-        if (result.status === StorageResStatus.success) {
-          callback(true);
-          this.router.navigate(['home/workspace/project/api']);
-        } else {
+
+      try {
+        console.log('content', content);
+        // TODO 兼容旧数据
+        // if (Reflect.has(data, 'collections') && Reflect.has(data, 'environments')) {
+        //   content = old2new(data, projectUuid, workSpaceUuid);
+        //   console.log('new content', content);
+        // }
+        const [, err] = await this.apiService.api_projectImport({
+          ...data,
+          projectUuid: this.store.getCurrentProjectID,
+          workSpaceUuid: this.store.getCurrentWorkspaceUuid
+        });
+        if (err) {
           callback(false);
-          pcConsole.error('Import Error', result.error);
           return;
         }
+        callback(true);
         this.router.navigate(['home/workspace/project/api']);
-      });
+      } catch (error) {
+        callback(false);
+        pcConsole.error('Import Error', error);
+      }
     } catch (e) {
       console.error(e);
       callback(false);

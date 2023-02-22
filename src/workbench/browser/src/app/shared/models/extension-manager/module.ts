@@ -1,26 +1,39 @@
 //@ts-ignore
 import { createServer } from 'http-server/lib/http-server';
 
+import { ThemeColors } from '../../../core/services/theme/theme.model';
+type ThemeItems = {
+  label: string;
+  id: string;
+  baseTheme: string;
+  colors?: Partial<ThemeColors>;
+};
 export type FeatureInfo = {
   icon: string;
-  title: string;
+  label: string;
   description: string;
   //Function name
   action: string;
+
   //ExportAPI.Filename
   filename?: string;
 
+  //theme
+  theme: ThemeItems[];
   //*Field for browser generate by code,not actually in package.json
   extensionID: string;
-  //!Will deprecated
-  label: string;
   rightExtra: any[];
+};
+
+export type I18nLocale = {
+  locale: string;
+  package: any | object;
 };
 
 /**
  * 模块信息接口
  */
-export interface ModuleInfo {
+export interface ExtensionInfo {
   //Unique npm package name
   name: string;
   version: string;
@@ -34,20 +47,26 @@ export interface ModuleInfo {
   //Entry js file,node environment
   node: string;
   title: string;
+  downloadCounts: number;
   // extension logo
   logo: string;
   //Contribution Feature
   features?: {
+    apiPreviewTab: any;
     configuration: ModuleConfiguration;
-    i18n?: I18nLocale;
+    i18n?: FeatureI18nLocale;
     extensionTabView: ExtensionTabView[];
     sidebarView: SidebarView;
     importAPI: FeatureInfo;
     exportAPI: FeatureInfo;
-    syncAPI: FeatureInfo;
-
+    pushAPI: FeatureInfo;
+    theme: ThemeItems[];
     //Random feature
     [index: string]: any;
+    /**
+     * @deprecated
+     */
+    syncAPI: FeatureInfo;
   };
 
   //*Field for browser generate by code,not actually in package.json
@@ -55,12 +74,11 @@ export interface ModuleInfo {
   introduction: string;
   //file location
   baseDir: string;
+  //Is open
+  enable?: boolean;
 
   //*Only exist in HTTP request(from extension server) moduleInfo
-  i18n: Array<{
-    locale: string;
-    package: any | object;
-  }>;
+  i18n: I18nLocale[];
 }
 
 /**
@@ -98,7 +116,7 @@ export type SidebarView = {
   server?: HttpServer;
 };
 
-export interface I18nLocale {
+export interface FeatureI18nLocale {
   sourceLocale: string;
   locales: string[];
 }

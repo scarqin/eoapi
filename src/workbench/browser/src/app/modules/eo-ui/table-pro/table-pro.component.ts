@@ -1,5 +1,4 @@
 import {
-  AfterViewInit,
   ChangeDetectorRef,
   Component,
   ElementRef,
@@ -18,7 +17,8 @@ import {
 import _, { attempt, has, isUndefined, omitBy } from 'lodash-es';
 
 import { eoDeepCopy } from '../../../utils/index.utils';
-import { filterTableData, getTreeTotalCount } from '../../../utils/tree/tree.utils';
+import StorageUtil from '../../../utils/storage/storage.utils';
+import { filterTableData, generateQuoteKeyValue, getTreeTotalCount } from '../../../utils/tree/tree.utils';
 import { ColumnItem, IconBtn, TableProSetting } from './table-pro.model';
 import { TableProConfig, TABLE_PRO_CONFIG, TABLE_PRO_DEFUALT_CONFIG } from './table-pro.token';
 @Component({
@@ -39,6 +39,7 @@ export class EoTableProComponent implements OnInit, OnChanges {
   @Input() columnVisibleStatus = {};
 
   @Input() nzCheckAddRow;
+  @Input() nzCheckAddChild;
   @Input() nzDragCheck;
 
   @Input() nzTrClick: (...rest: any[]) => void;
@@ -47,7 +48,7 @@ export class EoTableProComponent implements OnInit, OnChanges {
 
   @ViewChild('enumsTmp', { read: TemplateRef }) enumsTmp: TemplateRef<HTMLDivElement>;
 
-  private BTN_TYPE_NEED_CUSTOMER = ['delete', 'insert', 'edit'];
+  private BTN_TYPE_NEED_CUSTOMER = ['delete', 'insert', 'edit', 'addChild'];
   //Default buttom template match action
   private TABLE_DEFAULT_BTN: { [key: string]: Partial<IconBtn> };
   iconBtns: IconBtn[] = [];
@@ -68,9 +69,13 @@ export class EoTableProComponent implements OnInit, OnChanges {
   private isFullScreenStatus = false;
   private IS_EDIT_COLUMN_TYPE = ['select', 'checkbox', 'autoComplete', 'input', 'inputNumber'];
   private COLUMN_VISIBLE_KEY: string;
+
+  private COLUMN_WIDTH_KEY: string;
+
   //Default Table unique ID
   private DEFAULT_ID: string;
   private showItems = [];
+  // private COLUMN_;
   constructor(private cdRef: ChangeDetectorRef, private elRef: ElementRef, @Inject(TABLE_PRO_CONFIG) public tableConfig: TableProConfig) {
     this.tableConfig = Object.assign(eoDeepCopy(TABLE_PRO_DEFUALT_CONFIG), this.tableConfig);
     this.TABLE_DEFAULT_BTN = {
@@ -83,7 +88,7 @@ export class EoTableProComponent implements OnInit, OnChanges {
       addChild: {
         icon: this.tableConfig.btnAddChildRowIcon,
         title: this.tableConfig.btnAddChildRowTitle,
-        fnName: 'addChild'
+        fnName: 'addChildRow'
       },
       insert: {
         icon: this.tableConfig.btnInsertRowIcon,
@@ -125,6 +130,23 @@ export class EoTableProComponent implements OnInit, OnChanges {
           this.nzData.push(eoDeepCopy(this.nzDataItem));
         }
       }
+      const hasQuoteKey = this.columns.some(col => col.key?.includes('.'));
+      if (hasQuoteKey && !this.setting.isEdit) {
+        const chains = this.columns
+          .filter(col => col.key?.includes('.'))
+          .map(val => {
+            const arr = val.key.split('.');
+            const valResult = {
+              arr,
+              str: val.key,
+              name: arr.at(-1)
+            };
+            return valResult;
+          });
+        this.nzData = generateQuoteKeyValue(chains, this.nzData, {
+          childKey: this.tableConfig.childKey
+        });
+      }
     }
   }
   getPureNzData() {
@@ -163,7 +185,12 @@ export class EoTableProComponent implements OnInit, OnChanges {
       }
       switch (btnItem.fnName) {
         case 'insertRow': {
-          apis[btnItem.fnName](index, 'down', false);
+          apis.insertRow(index, 'down', false);
+          break;
+        }
+        case 'addChildRow': {
+          this.nzCheckAddChild?.(item, index);
+          apis[btnItem.fnName](index);
           break;
         }
         default: {
@@ -187,11 +214,30 @@ export class EoTableProComponent implements OnInit, OnChanges {
       domElem.className = domElem.className.replace(' eo-ng-table-full-screen', '');
     }
   }
-  toggleColumnVisible(item: { key: string }, $event?: Event) {
+  toggleColumnVisible(item: { key: string; checked: boolean }, $event?: Event) {
     $event?.stopPropagation();
-    this.columnVisibleStatus[item.key] = !this.columnVisibleStatus[item.key];
+    item.checked = this.columnVisibleStatus[item.key] = !this.columnVisibleStatus[item.key];
+
     this.columnVisibleStatusChange.emit(this.columnVisibleStatus);
     window.localStorage.setItem(this.COLUMN_VISIBLE_KEY, JSON.stringify(this.columnVisibleStatus));
+  }
+
+  /**
+   * Remeber coloum size after resize
+   */
+  nzResizeColumn(tableList) {
+    //* If the first column is sortable, the first column will be removed from the tableList
+    if (this.setting.rowSortable && this.columns[0].type !== 'sort') {
+      tableList = tableList.slice(1);
+    }
+    const widthByKey = {};
+    this.columns.forEach((val, key) => {
+      const headerCol = tableList.find(col => col.title === val.title || col.key === val.key) || tableList[key];
+      if (headerCol.width) {
+        widthByKey[val.key || key] = headerCol.width;
+      }
+    });
+    StorageUtil.set(this.COLUMN_WIDTH_KEY, widthByKey);
   }
   //* Use pro custom template to generate icon btn
   private needCustomTempalte(btn) {
@@ -219,6 +265,8 @@ export class EoTableProComponent implements OnInit, OnChanges {
         throw new Error('EO_ERROR[eo-table-pro]: Lack of primaryKey, please add it in setting!');
       }
     }
+    //Set ColumnVisible
+    this.initColumnVisible();
 
     //Set RowSortable
     if (this.setting.rowSortable && this.columns[0].type !== 'sort') {
@@ -230,18 +278,9 @@ export class EoTableProComponent implements OnInit, OnChanges {
         type: 'sort'
       });
     }
-    //Set ColumnVisible
-    this.setting.toolButton = this.setting.toolButton || {};
-    if (!_.has(this.setting.toolButton, 'columnVisible')) {
-      this.setting.toolButton.columnVisible = this.columns.length >= 6 ? true : false;
-    }
-    if (this.setting.toolButton.columnVisible) {
-      if (!this.setting.id) {
-        pcConsole.warn('[eo-table-pro]: Lack of setting.id, the storage key for table columnVisible may repeat!');
-      }
-      this.COLUMN_VISIBLE_KEY = this.setting.id || `TABLE_COLUMN_VISIBLE_${this.DEFAULT_ID}`;
-      this.columnVisibleStatus = attempt(() => JSON.parse(window.localStorage.getItem(this.COLUMN_VISIBLE_KEY))) || {};
-    }
+
+    //Set columns width
+    this.initColumnWidth();
 
     //Set columns
     this.columns.forEach((col: ColumnItem) => {
@@ -274,6 +313,12 @@ export class EoTableProComponent implements OnInit, OnChanges {
         case 'checkbox': {
           header.type = 'checkbox';
           body.type = 'checkbox';
+          if (col.enums?.length) {
+            body.valueRef = {
+              true: col.enums[0].value,
+              false: col.enums[1].value
+            };
+          }
           break;
         }
         case 'inputNumber': {
@@ -414,12 +459,41 @@ export class EoTableProComponent implements OnInit, OnChanges {
       theaderConf.push(header);
       tbodyConf.push(body);
     });
+
     if (theaderConf.every(val => val.width)) {
       pcConsole.warn('[eo-table-pro]: all clumn item has set width,it will cause table width invalid,please rest');
     }
+
     this.theadConf = theaderConf;
     this.tbodyConf = tbodyConf;
-    // console.log(this.theadConf, this.tbodyConf);
+    // pcConsole.log(this.theadConf, this.tbodyConf);
+  }
+  private initColumnWidth() {
+    this.COLUMN_WIDTH_KEY = `TABLE_COLUMN_WIDTH_${this.setting.id || this.DEFAULT_ID}`;
+    /**
+     * Get column width from local storage
+     */
+    const columnWidth = StorageUtil.get(this.COLUMN_WIDTH_KEY);
+    if (columnWidth) {
+      this.columns.forEach((col, key) => {
+        if (columnWidth[col.key || key]) {
+          col.width = columnWidth[col.key];
+        }
+      });
+    }
+  }
+  private initColumnVisible() {
+    this.setting.toolButton = this.setting.toolButton || {};
+    if (!_.has(this.setting.toolButton, 'columnVisible')) {
+      this.setting.toolButton.columnVisible = this.columns.length >= 6 ? true : false;
+    }
+    if (this.setting.toolButton.columnVisible) {
+      if (!this.setting.id) {
+        pcConsole.warn('[eo-table-pro]: Lack of setting.id, the storage key for table columnVisible may repeat!');
+      }
+      this.COLUMN_VISIBLE_KEY = `TABLE_COLUMN_VISIBLE_${this.setting.id || this.DEFAULT_ID}`;
+      this.columnVisibleStatus = attempt(() => JSON.parse(window.localStorage.getItem(this.COLUMN_VISIBLE_KEY))) || {};
+    }
   }
   private deleteButtonShowFn(item, index, apis) {
     //The last row can't be deleted

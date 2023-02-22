@@ -2,10 +2,12 @@ import { Component, OnInit, Output, EventEmitter, Input } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { ElectronService } from 'eo/workbench/browser/src/app/core/services';
 import { LanguageService } from 'eo/workbench/browser/src/app/core/services/language/language.service';
+import { ExtensionInfo } from 'eo/workbench/browser/src/app/shared/models/extension-manager';
+import { TraceService } from 'eo/workbench/browser/src/app/shared/services/trace.service';
 
 import { WebService } from '../../../core/services/web/web.service';
+import { ExtensionService } from '../../../shared/services/extensions/extension.service';
 import { EoExtensionInfo } from '../extension.model';
-import { ExtensionService } from '../extension.service';
 
 @Component({
   selector: 'eo-extension-detail',
@@ -13,14 +15,14 @@ import { ExtensionService } from '../extension.service';
   styleUrls: ['./extension-detail.component.scss']
 })
 export class ExtensionDetailComponent implements OnInit {
-  @Input() extensionData = '';
+  @Input() extensionData: ExtensionInfo | null = null;
   @Output() readonly goBack: EventEmitter<any> = new EventEmitter();
+  @Input() nzSelectedIndex = 0;
   isOperating = false;
   introLoading = false;
   changelogLoading = false;
   isNotLoaded = true;
   extensionDetail: EoExtensionInfo;
-  nzSelectedIndex = 0;
 
   changeLog = '';
   changeLogNotFound = false;
@@ -29,7 +31,8 @@ export class ExtensionDetailComponent implements OnInit {
     private route: ActivatedRoute,
     private webService: WebService,
     private electron: ElectronService,
-    private language: LanguageService
+    private language: LanguageService,
+    private trace: TraceService
   ) {}
 
   ngOnInit(): void {
@@ -43,8 +46,11 @@ export class ExtensionDetailComponent implements OnInit {
   }
 
   async getDetail() {
+    const nzSelectedIndex = this.nzSelectedIndex;
+    this.nzSelectedIndex = -1;
+    this.extensionDetail = { ...this.extensionDetail, ...this.extensionData };
     if (this.electron.isElectron) {
-      this.isOperating = window.electron.getInstallingExtension(this.extensionData, ({ type, status }) => {
+      this.isOperating = window.electron.getInstallingExtension(this.extensionData?.name, ({ type, status }) => {
         if (type === 'install' && status === 'success') {
           this.extensionDetail.installed = true;
         }
@@ -54,18 +60,20 @@ export class ExtensionDetailComponent implements OnInit {
         this.isOperating = false;
       });
     }
-    this.extensionDetail = await this.extensionService.getDetail(this.extensionData, this.extensionData);
-
+    this.introLoading = true;
+    this.extensionDetail = await this.extensionService.getDetail(this.extensionData?.name);
     if (!this.extensionDetail?.installed || this.webService.isWeb) {
       await this.fetchReadme(this.language.systemLanguage);
     }
+    this.introLoading = false;
     this.isNotLoaded = false;
     this.extensionDetail.introduction ||= $localize`This plugin has no documentation yet.`;
 
-    if (this.extensionDetail?.features?.configuration) {
-      this.nzSelectedIndex = ~~this.route.snapshot.queryParams.tab;
-    }
     this.fetchChangelog(this.language.systemLanguage);
+
+    setTimeout(() => {
+      this.nzSelectedIndex = nzSelectedIndex;
+    });
   }
 
   async fetchChangelog(locale = '') {
@@ -78,7 +86,7 @@ export class ExtensionDetailComponent implements OnInit {
       const response = await fetch(`https://unpkg.com/${this.extensionDetail.name}@${this.extensionDetail.version}/CHANGELOG.md`);
       if (response.status === 200) {
         this.changeLog = await response.text();
-      } else if (!locale && response.status === 404) {
+      } else if (response.status === 404) {
         try {
           // const result = await fetch(`https://eoapi.eolinker.com/npm/${this.extensionDetail.name}`, {
           const result = await fetch(`https://registry.npmjs.org/${this.extensionDetail.name}`, {
@@ -98,10 +106,11 @@ ${log}
         } catch (error) {
           this.changeLogNotFound = true;
         }
-      } else if (locale) {
-        //If locale README not find,fetch default locale(en-US)
-        this.fetchChangelog();
       }
+      //  else if (locale) {
+      //   //If locale README not find,fetch default locale(en-US)
+      //   this.fetchChangelog();
+      // }
     } catch (error) {
     } finally {
       clearTimeout(timer);
@@ -114,7 +123,6 @@ ${log}
       locale = '';
     }
     try {
-      this.introLoading = true;
       const response = await fetch(
         `https://unpkg.com/${this.extensionDetail.name}@${this.extensionDetail.version}/README.${locale ? `${locale}.` : ''}md`
       );
@@ -126,7 +134,6 @@ ${log}
       }
     } catch (error) {
     } finally {
-      this.introLoading = false;
     }
   }
 
@@ -140,17 +147,18 @@ ${log}
     this.isOperating = true;
     switch (operate) {
       case 'install': {
-        const { name, version, main } = this.extensionDetail;
+        const { name, version, i18n } = this.extensionDetail;
         this.extensionDetail.installed = await this.extensionService.installExtension({
           name,
-          version,
-          main
+          version
         });
         this.extensionDetail['enabled'] = true;
+        this.trace.report('install_extension_success', { extension_id: id });
         break;
       }
       case 'uninstall': {
         this.extensionDetail.installed = !(await this.extensionService.uninstallExtension(id));
+        this.trace.report('uninstall_extension_success', { extension_id: id });
         break;
       }
     }

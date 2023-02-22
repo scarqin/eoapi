@@ -1,11 +1,13 @@
 import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { EoNgFeedbackMessageService } from 'eo-ng-feedback';
-import { cloneDeep, toArray, merge } from 'lodash-es';
+import { cloneDeep, toArray, merge, isEmpty } from 'lodash-es';
 import { computed, observable, makeObservable, reaction } from 'mobx';
 import qs from 'qs';
 
+import { BodyParam } from '../../../shared/services/storage/db/models/apiData';
 import { form2json, xml2json, isXML, json2Table } from '../../../utils/data-transfer/data-transfer.utils';
-import { whatType } from '../../../utils/index.utils';
+import { eoDeepCopy, whatType } from '../../../utils/index.utils';
+import { ApiParamsTypeJsonOrXml } from '../api.model';
 
 const titleHash = new Map()
   .set('xml', $localize`Import XML`)
@@ -15,7 +17,7 @@ const titleHash = new Map()
   .set('query', $localize`Import Query`);
 
 const egHash = new Map()
-  .set('xml', '<name>Jack</name>')
+  .set('xml', '<root><id>1</id><name>Jack</name></root>')
   .set('formData', 'name: Jack\nage: 18')
   .set('query', '/api?name=Jack&age=18')
   .set('json', `{ "name": "Jack", "age": 18 }`)
@@ -28,8 +30,12 @@ const egHash = new Map()
 export class ParamsImportComponent implements OnInit {
   @Input() disabled: boolean;
   @Input() rootType: 'array' | string | 'object' = 'object';
-  @Input() contentType: string | 'json' | 'formData' | 'xml' | 'header' | 'query' = 'json';
+  @Input() contentType: 'json' | 'formData' | 'xml' | 'header' | 'query' = 'json';
   @Input() baseData: object[] = [];
+  /**
+   * Table item structure
+   */
+  @Input() itemStruecture?: BodyParam;
   @Output() readonly baseDataChange = new EventEmitter<any>();
   @Output() readonly beforeHandleImport = new EventEmitter<any>();
 
@@ -56,9 +62,35 @@ export class ParamsImportComponent implements OnInit {
       () => this.isVisible,
       () => {
         this.paramCode = '';
+        this.autoPaste();
       }
     );
   }
+
+  async autoPaste() {
+    const clipText = await navigator.clipboard.readText();
+    if (this.contentType === 'xml') {
+      if (isXML(clipText)) {
+        this.paramCode = clipText;
+      }
+    } else if (this.contentType === 'json') {
+      try {
+        JSON.parse(clipText);
+        this.paramCode = clipText;
+      } catch (error) {}
+    } else if (['formData', 'header'].includes(this.contentType)) {
+      const arr = form2json(clipText);
+      if (Array.isArray(arr) && arr.length && clipText.split(':').length > 1) {
+        this.paramCode = clipText;
+      }
+    } else if (this.contentType === 'query') {
+      const [data] = this.parseQuery(clipText);
+      if (!isEmpty(data)) {
+        this.paramCode = clipText;
+      }
+    }
+  }
+
   showModal(type): void {
     this.isVisible = true;
   }
@@ -72,7 +104,7 @@ export class ParamsImportComponent implements OnInit {
       const data = JSON.parse(code);
       return [{ data, rootType: Array.isArray(data) ? 'array' : 'object' }, null];
     } catch (error) {
-      return [null, { msg: $localize`JSON format invalid` }];
+      return [null, { msg: $localize`JSON format invalid`, data: null }];
     }
   }
 
@@ -84,13 +116,13 @@ export class ParamsImportComponent implements OnInit {
   parseXML(code) {
     const status = isXML(code);
     if (!status) {
-      return [null, { msg: $localize`XML format invalid` }];
+      return [null, { msg: $localize`XML format invalid`, data: null }];
     }
     try {
       const result = xml2json(code);
       return [{ data: result, rootType: 'object' }, null];
     } catch (error) {
-      return [null, { msg: $localize`XML format invalid` }];
+      return [null, { msg: $localize`XML format invalid`, data: null }];
     }
   }
   parseForm(code) {
@@ -118,7 +150,7 @@ export class ParamsImportComponent implements OnInit {
     };
 
     const [res, err] = func[this.contentType](this.paramCode);
-    if (err) {
+    if (err && 'msg' in err) {
       this.message.error(err.msg);
       return;
     }
@@ -135,7 +167,7 @@ export class ParamsImportComponent implements OnInit {
       }
       return {
         ...data,
-        children: data?.children?.length ? array2obj(data.children) : {}
+        childList: data?.childList?.length ? array2obj(data.childList) : {}
       };
     };
 
@@ -143,7 +175,7 @@ export class ParamsImportComponent implements OnInit {
       Object.entries(data).map(([name, value]: any[]) => ({
         name,
         ...value,
-        children: value?.children ? obj2array(value.children) : []
+        childList: value?.childList ? obj2array(value.childList) : []
       }));
 
     const combineFunc = {
@@ -152,12 +184,25 @@ export class ParamsImportComponent implements OnInit {
       mixin: (data, base) => obj2array(merge(array2obj(base), array2obj(data)))
     };
 
+    const endParse = (data, type) => {
+      if (['xml'].includes(type)) {
+        const rootItem = data.at(0);
+        rootItem.dataType = ApiParamsTypeJsonOrXml.object;
+        rootItem.childList.push({ ...this.itemStruecture });
+        return [rootItem];
+      }
+      return data;
+    };
+
     const { data } = res;
-    // * this.baseData.reverse().slice(1).reverse() for filter the last empty row
     const emptyRow = this.baseData.slice(-1);
-    const resultData = cloneDeep(this.baseData.reverse().slice(1).reverse());
+
+    // * this.baseData.slice(0,-1) for filter the last empty row
+    const resultData = cloneDeep(['xml'].includes(this.contentType) ? this.baseData : this.baseData.slice(0, -1));
     const result = combineFunc[type](json2Table(data), resultData);
-    this.baseDataChange.emit([...result, ...emptyRow]);
+    // * 后处理
+    const finalData = endParse([...result, ...emptyRow], this.contentType);
+    this.baseDataChange.emit(finalData);
     this.handleCancel();
   }
 }

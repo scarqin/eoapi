@@ -1,65 +1,170 @@
 import { Component, OnInit } from '@angular/core';
-import { getGlobals } from 'eo/workbench/browser/src/app/pages/workspace/project/api/service/api-test/api-test.utils';
+import { SidebarService } from 'eo/workbench/browser/src/app/layouts/sidebar/sidebar.service';
+import { ApiTestUtilService } from 'eo/workbench/browser/src/app/pages/workspace/project/api/service/api-test-util.service';
+import { Environment } from 'eo/workbench/browser/src/app/shared/services/storage/db/models';
+import { TraceService } from 'eo/workbench/browser/src/app/shared/services/trace.service';
 import { StoreService } from 'eo/workbench/browser/src/app/shared/store/state.service';
-import { autorun } from 'mobx';
+import { autorun, makeObservable, observable, reaction, action, toJS } from 'mobx';
 
-import { Environment } from '../../../../../../shared/services/storage/index.model';
+import { ApiEffectService } from '../../service/store/api-effect.service';
+import { ApiStoreService } from '../../service/store/api-state.service';
 
 @Component({
-  selector: 'env-list',
-  template: ` <div style="width:400px" class="preview pb-4">
-    <span class="flex items-center px-6 h-12 title" i18n>Global variable</span>
-    <div *ngIf="gloablParams.length" class="flex items-center justify-between px-6 h-8 content">
-      <span class="px-1 w-1/3 text-gray-400" i18n>Name</span>
-      <span class="px-1 w-2/3 text-gray-400" i18n>Value</span>
-    </div>
-    <div *ngFor="let it of gloablParams" class="flex items-center justify-between px-6 h-8">
-      <span class="px-1 w-1/3  text-ellipsis overflow-hidden" [title]="it.name">{{ it.name }}</span>
-      <span class="px-1 w-2/3  text-ellipsis overflow-hidden" [title]="it.value">{{ it.value }}</span>
-    </div>
-    <span *ngIf="!gloablParams.length" class="flex items-center px-6 h-12 text-gray-400" i18n>No Global variables</span>
-    <div *ngIf="renderEnv?.uuid">
-      <div *ngIf="renderEnv.hostUri">
-        <span class="flex items-center px-6 h-12 title" i18n>Environment Host</span>
-        <div>
-          <span class="text-ellipsis overflow-hidden flex items-center px-6 h-12 content">{{ renderEnv.hostUri }}</span>
+  selector: 'eo-env-select',
+  template: `
+    <div class="env-select">
+      <button
+        eo-ng-button
+        nzType="text"
+        class="flex items-center justify-center ml-2 cursor-pointer"
+        i18n-nzTooltipTitle
+        eoNgFeedbackTooltip
+        [nzTooltipMouseLeaveDelay]="0"
+        nzTooltipTitle="Environment Quick Look"
+        nz-popover
+        nzPopoverOverlayClassName="background-popover preview-env"
+        [nzPopoverContent]="envParams"
+        (nzTooltipVisibleChange)="onVisibleChange($event)"
+        nzTooltipPlacement="left"
+        nzPopoverPlacement="bottomRight"
+        nzPopoverTrigger="click"
+      >
+        <eo-iconpark-icon name="preview-open"></eo-iconpark-icon>
+      </button>
+      <ng-template #envParams>
+        <div style="width:400px" class="preview pb-4">
+          <span class="flex items-center px-6 h-12 title" i18n>Global variable</span>
+          <div *ngIf="gloablParams.length" class="flex items-center justify-between px-6 h-8 content">
+            <span class="px-1 w-1/3 text-tips" i18n>Name</span>
+            <span class="px-1 w-2/3 text-tips" i18n>Value</span>
+          </div>
+          <div *ngFor="let it of gloablParams" class="flex items-center justify-between px-6 h-8">
+            <span class="px-1 w-1/3  text-ellipsis overflow-hidden" [title]="it.name">{{ it.name }}</span>
+            <span class="px-1 w-2/3  text-ellipsis overflow-hidden" [title]="it.value">{{ it.value }}</span>
+          </div>
+          <span *ngIf="!gloablParams.length" class="flex items-center px-6 h-12 text-tips" i18n>No Global variables</span>
+          <div *ngIf="renderEnv?.id">
+            <div *ngIf="renderEnv.hostUri">
+              <span class="flex items-center px-6 h-12 title" i18n>Environment Host</span>
+              <div>
+                <span class="text-ellipsis overflow-hidden flex items-center px-6 h-12 content">{{ renderEnv.hostUri }}</span>
+              </div>
+            </div>
+            <ng-container *ngIf="renderEnv.parameters?.length">
+              <span class="flex items-center px-6 h-12 title" i18n>Environment Global variable</span>
+              <div class="flex items-center justify-between px-6 h-8">
+                <span class="px-1 w-1/3 text-tips" i18n>Name</span>
+                <span class="px-1 w-2/3 text-tips" i18n>Value</span>
+              </div>
+            </ng-container>
+            <div *ngFor="let it of renderEnv.parameters" class="flex items-center justify-between px-6 h-8 content">
+              <span class="px-1 w-1/3 text-ellipsis overflow-hidden" [title]="it.name">{{ it.name }}</span>
+              <span class="px-1 w-2/3 text-ellipsis overflow-hidden" [title]="it.value">{{ it.value }}</span>
+            </div>
+          </div>
         </div>
-      </div>
-      <span class="flex items-center px-6 h-12 title" *ngIf="renderEnv.parameters?.length" i18n>Environment Global variable</span>
-      <div class="flex items-center justify-between px-6 h-8">
-        <span class="px-1 w-1/3 text-gray-400" i18n>Name</span>
-        <span class="px-1 w-2/3 text-gray-400" i18n>Value</span>
-      </div>
-      <div *ngFor="let it of renderEnv.parameters" class="flex items-center justify-between px-6 h-8 content">
-        <span class="px-1 w-1/3 text-ellipsis overflow-hidden" [title]="it.name">{{ it.name }}</span>
-        <span class="px-1 w-2/3 text-ellipsis overflow-hidden" [title]="it.value">{{ it.value }}</span>
-      </div>
+      </ng-template>
+      <eo-ng-select
+        [nzDropdownMatchSelectWidth]="false"
+        [(ngModel)]="envUuid"
+        nzDropdownClassName="env-selector-dropdown"
+        [(nzOpen)]="isOpen"
+        nzPlacement="bottomRight"
+        [nzDropdownRender]="renderTemplate"
+        nzAllowClear
+        i18n-nzPlaceHolder="Environment Dropdown placeholder"
+        [nzOptions]="renderEnvList"
+        nzPlaceHolder="Environment"
+      >
+      </eo-ng-select>
+      <ng-template #renderTemplate>
+        <ng-container *ngIf="!globalStore.isShare">
+          <nz-divider></nz-divider>
+          <a class="!flex text-sx manager-env" eo-ng-button nzType="link" (click)="gotoEnvManager()" i18n>Manage Environment</a>
+        </ng-container>
+      </ng-template>
     </div>
-  </div>`,
+  `,
   styleUrls: ['./env-select.component.scss']
 })
 export class EnvSelectComponent implements OnInit {
+  @observable envUuid = '';
+  isOpen = false;
   gloablParams: any = [];
-  renderEnv: Environment = {
+  renderEnv: Partial<Environment> = {
     name: '',
-    projectID: -1,
     hostUri: '',
     parameters: []
   };
-  constructor(private store: StoreService) {}
+  renderEnvList = [];
+  constructor(
+    private store: ApiStoreService,
+    public globalStore: StoreService,
+    private sidebar: SidebarService,
+    private effect: ApiEffectService,
+    private testUtils: ApiTestUtilService,
+    private trace: TraceService
+  ) {}
+  onVisibleChange($event) {
+    if ($event) {
+      this.gloablParams = this.getGlobalParams();
+    }
+  }
   ngOnInit() {
-    autorun(() => {
-      this.renderEnv = this.store.getEnvList
-        .map(it => ({
-          ...it,
-          parameters: it.parameters.filter(item => item.name || item.value)
-        }))
-        .find((it: any) => it.uuid === this.store.getCurrentEnv?.uuid);
-    });
-    this.gloablParams = this.getGlobalParams();
+    makeObservable(this);
+    this.effect.updateEnvList();
+
+    reaction(
+      () => this.store.getEnvList,
+      list => {
+        this.renderEnvList = list.map(it => ({ label: it.name, value: it.id }));
+        this.setCurrentEnv();
+      }
+    );
+
+    /**
+     * Change Select env id
+     */
+    reaction(
+      () => this.envUuid,
+      data => {
+        this.store.setEnvUuid(data);
+        data && this.trace.report('select_environment');
+      }
+    );
+    this.setEnvUuid(this.store.getEnvUuid);
+
+    /**
+     * Set current selected environment by id
+     */
+    reaction(
+      () => this.store.getEnvUuid,
+      data => {
+        /**
+         * From outside change env uuid
+         * Such as add enviroment
+         */
+        this.setEnvUuid(data);
+        this.setCurrentEnv();
+      }
+    );
+  }
+  @action setEnvUuid(uuid) {
+    this.envUuid = uuid;
+  }
+
+  setCurrentEnv() {
+    this.renderEnv = toJS(this.store.getEnvList.find((it: any) => it.id === this.store.getEnvUuid));
+    if (!this.renderEnv) return;
+    this.renderEnv.parameters = this.renderEnv.parameters.filter(item => item.name || item.value);
+  }
+  gotoEnvManager() {
+    // * close select
+    this.isOpen = false;
+    this.sidebar.setModule('@eo-core-env');
   }
   getGlobalParams() {
-    return Object.entries(getGlobals() || {}).map(it => {
+    return Object.entries(this.testUtils.getGlobals() || {}).map(it => {
       const [key, value] = it;
       return { name: key, value };
     });

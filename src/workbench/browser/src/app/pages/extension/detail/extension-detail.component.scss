@@ -7,10 +7,23 @@
 }
 
 :host ::ng-deep {
+  .title {
+    .ant-tag {
+      border-radius: 4px;
+      padding: 0 4px;
+    }
+  }
+
+  .subtitle {
+    .ant-divider {
+      @apply mx-[12px];
+    }
+  }
+
   .ant-skeleton {
     display: block;
 
-    &[ng-reflect-nz-loading='true'] {
+    &.loading {
       display: table;
     }
   }
@@ -20,15 +33,21 @@
   }
 
   .ant-tabs-nav-list {
-    margin-left: 20px;
+    margin-left: 30px;
   }
 
   .ant-tabs {
     overflow: hidden;
+
+    &:not(.settings) {
+      .ant-tabs-content-holder {
+        padding-top: 35px;
+      }
+    }
   }
 
   .ant-tabs-content-holder {
-    padding-top: 35px;
+    padding-top: 12px;
     padding-bottom: 8px;
     margin-bottom: 0;
     overflow: auto;
@@ -43,7 +62,7 @@
   }
 
   .tab-content-container {
-    @apply w-4/5 m-auto;
+    @apply px-[40px] m-auto;
   }
 
   .md-preview {
@@ -62,11 +81,11 @@
 
     .ant-descriptions-item-content,
     .ant-descriptions-item-label {
-      color: var(--TIPS_TEXT_COLOR);
+      color: var(--text-secondary-color);
     }
   }
 }
 
 a {
-  color: var(--BLUE_NORMAL);
+  color: var(--info-color);
 }

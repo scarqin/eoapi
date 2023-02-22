@@ -2,14 +2,17 @@ import { Component, EventEmitter, Input, OnDestroy, Output, ViewChild } from '@a
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { EoNgFeedbackMessageService } from 'eo-ng-feedback';
+import { TabViewComponent } from 'eo/workbench/browser/src/app/modules/eo-ui/tab/tab.model';
+import { ApiService } from 'eo/workbench/browser/src/app/shared/services/storage/api.service';
+import { TraceService } from 'eo/workbench/browser/src/app/shared/services/trace.service';
+import { StoreService } from 'eo/workbench/browser/src/app/shared/store/state.service';
 import { fromEvent, Subject, takeUntil } from 'rxjs';
 
 import { ColumnItem } from '../../../../../../modules/eo-ui/table-pro/table-pro.model';
-import { Environment, StorageRes, StorageResStatus } from '../../../../../../shared/services/storage/index.model';
-import { StorageService } from '../../../../../../shared/services/storage/storage.service';
-import { EffectService } from '../../../../../../shared/store/effect.service';
-import { StoreService } from '../../../../../../shared/store/state.service';
-import { eoDeepCopy } from '../../../../../../utils/index.utils';
+import { Environment } from '../../../../../../shared/services/storage/index.model';
+import { eoDeepCopy, JSONParse } from '../../../../../../utils/index.utils';
+import { ApiEffectService } from '../../service/store/api-effect.service';
+import { ApiStoreService } from '../../service/store/api-state.service';
 
 export type EnvironmentView = Partial<Environment>;
 @Component({
@@ -17,7 +20,7 @@ export type EnvironmentView = Partial<Environment>;
   templateUrl: './env-edit.component.html',
   styleUrls: ['./env-edit.component.scss']
 })
-export class EnvEditComponent implements OnDestroy {
+export class EnvEditComponent implements OnDestroy, TabViewComponent {
   @Input() model: EnvironmentView;
   @Input() initialModel: EnvironmentView;
   @Output() readonly modelChange = new EventEmitter<EnvironmentView>();
@@ -41,18 +44,21 @@ export class EnvEditComponent implements OnDestroy {
       ]
     }
   ];
+  isSaving = false;
   validateForm: FormGroup;
   @ViewChild('envParams')
   envParamsComponent: any;
   private destroy$: Subject<void> = new Subject<void>();
   constructor(
-    private storage: StorageService,
-    private effect: EffectService,
+    private api: ApiService,
+    private effect: ApiEffectService,
+    private store: ApiStoreService,
+    public globalStore: StoreService,
     private fb: FormBuilder,
     private message: EoNgFeedbackMessageService,
     private route: ActivatedRoute,
     private router: Router,
-    private store: StoreService
+    private trace: TraceService
   ) {
     this.initShortcutKey();
     this.initForm();
@@ -66,7 +72,7 @@ export class EnvEditComponent implements OnDestroy {
         if ([ctrlKey, metaKey].includes(true) && code === 'KeyS') {
           // 或者 return false;
           event.preventDefault();
-          this.saveEnv();
+          this.saveEnv('shortcut');
         }
       });
   }
@@ -81,45 +87,44 @@ export class EnvEditComponent implements OnDestroy {
     }
     return true;
   }
-  saveEnv() {
-    const uuid = Number(this.route.snapshot.queryParams.uuid);
+  private async createEnv(form, ux = 'ui') {
+    const [data, err] = await this.effect.addEnv(form);
+    if (err) {
+      this.message.error(err.code == 131000001 ? $localize`Environment name length needs to be less than 32` : $localize`Failed to add`);
+      return;
+    }
+    this.trace.report('add_environment_success', { trigger_way: ux });
+    this.message.success($localize`Added successfully`);
+    // * Would not refresh page
+    this.router.navigate(['home/workspace/project/api/env/edit'], {
+      queryParams: { pageID: this.route.snapshot.queryParams.pageID, uuid: data.id }
+    });
+    return data;
+  }
+  private async editEnv(form) {
+    const [data, err] = await this.effect.updateEnv(form);
+    if (err) {
+      this.message.error(err.code == 131000001 ? $localize`Environment name length needs to be less than 32` : $localize`Failed to edit`);
+      return;
+    }
+    this.message.success($localize`Edited successfully`);
+    return data;
+  }
+  async saveEnv(ux = 'ui') {
+    const isEdit = !!this.route.snapshot.queryParams.uuid;
     if (!this.checkForm()) {
       return;
     }
+    this.isSaving = true;
     const formdata = this.formatEnvData(this.model);
-    formdata.projectID = this.store.getCurrentProjectID;
     this.initialModel = eoDeepCopy(formdata);
-    const operateMUI = {
-      edit: {
-        method: 'environmentUpdate',
-        params: [formdata, uuid],
-        success: $localize`Edited successfully`,
-        error: $localize`Failed to edit`
-      },
-      add: {
-        method: 'environmentCreate',
-        params: [formdata],
-        success: $localize`Added successfully`,
-        error: $localize`Failed to add`
-      }
-    };
-    const operateName = uuid ? 'edit' : 'add';
-    const operate = operateMUI[operateName];
-    this.storage.run(operate.method, operate.params, async (result: StorageRes) => {
-      if (result.status === StorageResStatus.success) {
-        this.message.success(operate.success);
-        this.effect.updateEnvList();
-        console.log(operateName);
-        if (operateName === 'add') {
-          this.router.navigate(['home/workspace/project/api/env/edit'], {
-            queryParams: { pageID: this.route.snapshot.queryParams.pageID, uuid: result.data.uuid }
-          });
-        }
-        this.afterSaved.emit(this.initialModel);
-      } else {
-        this.message.error(operate.error);
-      }
-    });
+    formdata.parameters = JSON.stringify(formdata.parameters);
+    const data = isEdit ? await this.editEnv(formdata) : await this.createEnv(formdata, ux);
+    this.isSaving = false;
+    this.afterSaved.emit(this.initialModel);
+    if (!this.store.getEnvUuid) {
+      this.store.setEnvUuid(data.id || formdata.id);
+    }
   }
   async init() {
     const id = Number(this.route.snapshot.queryParams.uuid);
@@ -153,19 +158,18 @@ export class EnvEditComponent implements OnDestroy {
     const hasChanged = JSON.stringify(this.formatEnvData(this.model)) !== JSON.stringify(this.formatEnvData(this.initialModel));
     return hasChanged;
   }
-  getEnv(uuid) {
-    return new Promise(resolve => {
-      this.storage.run('environmentLoad', [uuid], (result: StorageRes) => {
-        if (result.status === StorageResStatus.success) {
-          const envData = result.data ?? {};
-          const parameters = envData.parameters ?? [];
-          //! Compatible some error data
-          envData.parameters = typeof parameters === 'string' ? JSON.parse(parameters) : parameters;
-          resolve([envData, null]);
-        }
-        resolve([null, result.status]);
-      });
+  async getEnv(id: number) {
+    const [result, err] = await this.api.api_environmentDetail({
+      id
     });
+    if (err) {
+      return [null, err];
+    } else {
+      const envData = result ?? {};
+      const parameters = envData.parameters ?? [];
+      envData.parameters = JSONParse(parameters);
+      return [envData];
+    }
   }
   ngOnDestroy() {
     this.destroy$.next();

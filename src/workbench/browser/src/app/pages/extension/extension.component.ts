@@ -1,21 +1,24 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { ElectronService } from 'eo/workbench/browser/src/app/core/services';
-import { observable, makeObservable, computed, action } from 'mobx';
+import { ExtensionInfo } from 'eo/workbench/browser/src/app/shared/models/extension-manager';
+import { observable, makeObservable, computed, action, reaction } from 'mobx';
 import { NzFormatEmitEvent, NzTreeNodeOptions } from 'ng-zorro-antd/tree';
 
-import { ExtensionGroupType } from './extension.model';
-import { ExtensionService } from './extension.service';
-
+import { ExtensionService } from '../../shared/services/extensions/extension.service';
+import { getExtensionCates, ExtensionGroupType, suggestList } from './extension.model';
 @Component({
   selector: 'eo-extension',
   templateUrl: './extension.component.html',
   styleUrls: ['./extension.component.scss']
 })
 export class ExtensionComponent implements OnInit {
-  @observable extensionName = '';
+  @observable currentExtension: ExtensionInfo | null = null;
   @observable selectGroup: ExtensionGroupType | string = ExtensionGroupType.all;
-  keyword = '';
-  nzSelectedKeys: Array<number | string> = ['all'];
+  @observable @Input() keyword = '';
+  @observable @Input() nzSelectedKeys: Array<number | string> = ['all'];
+  category = '';
+  nzSelectedIndex = 0;
+  searchOptions = [];
   treeNodes: NzTreeNodeOptions[] = [
     {
       key: 'all',
@@ -28,6 +31,7 @@ export class ExtensionComponent implements OnInit {
       title: $localize`Official`,
       isLeaf: true
     },
+    ...getExtensionCates(),
     {
       key: 'installed',
       title: $localize`Installed`,
@@ -36,21 +40,44 @@ export class ExtensionComponent implements OnInit {
   ];
 
   @computed get hasExtension() {
-    return !!this.extensionName;
+    return !!this.currentExtension;
   }
 
   @computed get getExtension() {
-    return this.extensionName;
+    return this.currentExtension;
   }
 
   constructor(public extensionService: ExtensionService, public electron: ElectronService) {}
 
   ngOnInit(): void {
     makeObservable(this);
+    reaction(
+      () => this.keyword,
+      (value, oldValue) => {
+        const isSuggest = suggestList.some(n => oldValue && n.startsWith(oldValue));
+        if (value.trim() === '' && isSuggest) {
+          const node = this.treeNodes.find(n => n.key === 'all');
+          this.nzSelectedKeys = ['all'];
+          node && this.setGroup(node.key);
+        }
+      }
+    );
   }
 
-  selectExtension(name = '') {
-    this.setExtension(name);
+  onInput(value: string): void {
+    this.searchOptions = value.trim() ? suggestList.filter(n => n.startsWith(value)) : [];
+    const suggest = suggestList.find(n => value && n.startsWith(value) && n.startsWith('@category:'));
+    const node = this.treeNodes.find(n => n.key === suggest);
+    if (suggest && node) {
+      this.nzSelectedKeys = [node.key];
+    }
+  }
+
+  selectExtension(ext = null) {
+    this.setExtension(ext);
+    if (Number.isInteger(ext?.nzSelectedIndex)) {
+      this.nzSelectedIndex = ext?.nzSelectedIndex;
+    }
   }
   /**
    * Group tree item click.
@@ -58,15 +85,20 @@ export class ExtensionComponent implements OnInit {
    * @param event
    */
   clickTreeItem(event: NzFormatEmitEvent): void {
+    const { key } = event.node.origin;
+    if (this.selectGroup !== key) {
+      this.keyword = '';
+    }
     this.selectExtension('');
-    this.setGroup(event.node.key);
+    this.setGroup(key);
+    this.nzSelectedKeys = [key];
   }
 
   @action setGroup(data) {
     this.selectGroup = data;
   }
 
-  @action setExtension(data = '') {
-    this.extensionName = data;
+  @action setExtension(data = null) {
+    this.currentExtension = data;
   }
 }

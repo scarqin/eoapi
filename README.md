@@ -1,6 +1,7 @@
 # Postcat API 客户端（Client）
 
 ![Postcat API Client](http://data.eolinker.com/course/QbLMSaJ7f3dcd0b075a7031b31f8acb486e0a090f1bdc8d.jpeg)
+<p align="center"><a href="wiki/README.en.md">English</a> | <span>简体中文</span></p>
 
 Postcat 是一个强大的开源、跨平台（Windows、Mac、Linux、Browsers...）的 API 开发测试工具，支持 REST、Websocket 等协议（即将支持 GraphQL、gRPC、TCP、UDP），帮助你加速完成API开发和测试工作。
 
@@ -10,7 +11,7 @@ Postcat 是一个强大的开源、跨平台（Windows、Mac、Linux、Browsers.
 
 ![Postcat UI](http://data.eolinker.com/course/7UYEmJb7b87f58cc42b9528058c673ff41bd96da6a77d71.png)
 
-![Postcat Plugins](http://data.eolinker.com/course/Q9jIAtIc498a3fa46199654df2ffb7b4fdb48b2ebb88ba3.png)
+![Postcat Extensions](http://data.eolinker.com/course/Q9jIAtIc498a3fa46199654df2ffb7b4fdb48b2ebb88ba3.png)
 
 ## 下载和在线使用
 
@@ -40,7 +41,7 @@ Postcat 现在已经支持 Windows、Mac、Linux等系统，你可以通过以�
 
 ## Bug 和需求反馈
 
-如果想要反馈 Bug、提供产品意见，可以创建一个 [Github issue](https://github.com/eolinker/postcat/issues) 联系我们，十分感谢！
+如果想要反馈 Bug、提供产品意见，可以创建一个 [Github issue](https://github.com/Postcatlab/postcat/issues) 联系我们，十分感谢！
 
 如果你希望和 Postcat 团队近距离交流，讨论产品使用技巧以及了解更多产品最新进展，欢迎加入以下渠道。
 

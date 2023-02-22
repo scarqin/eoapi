@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { EoNgTabsModule } from 'eo-ng-tabs';
+import { NzSelectModule } from 'ng-zorro-antd/select';
 
 import { MemberListModule } from '../../../modules/member-list/member-list.module';
 import { MemberService } from '../../../modules/member-list/member.service';
@@ -10,20 +11,40 @@ import { WorkspaceSettingComponent } from '../components/edit/workspace-edit.com
 import { WorkspaceMemberComponent } from '../components/member/workspace-member.component';
 import { WorkspaceMemberService } from '../components/member/workspace-member.service';
 import { ProjectListModule } from '../components/project-list/project-list.module';
+import { ProjectListService } from '../components/project-list/project-list.service';
 import { WorkspaceOverviewComponent } from './workspace-overview.component';
 
 @NgModule({
   declarations: [WorkspaceOverviewComponent, WorkspaceMemberComponent, WorkspaceSettingComponent],
   imports: [
     CommonModule,
-    ProjectListModule,
     MemberListModule,
     SharedModule,
     EoNgTabsModule,
+    NzSelectModule,
     RouterModule.forChild([
       {
         path: '',
-        component: WorkspaceOverviewComponent
+        component: WorkspaceOverviewComponent,
+        children: [
+          {
+            path: '',
+            redirectTo: 'projects',
+            pathMatch: 'full'
+          },
+          {
+            path: 'projects',
+            loadChildren: () => import('../components/project-list/project-list.module').then(m => m.ProjectListModule)
+          },
+          {
+            path: 'member',
+            component: WorkspaceMemberComponent
+          },
+          {
+            path: 'setting',
+            component: WorkspaceSettingComponent
+          }
+        ]
       }
     ])
   ],

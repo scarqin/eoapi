@@ -1,11 +1,12 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
-import { autorun } from 'mobx';
+import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+import { MessageService } from 'eo/workbench/browser/src/app/shared/services/message';
+import { waitNextTick } from 'eo/workbench/browser/src/app/utils/index.utils';
+import { autorun, reaction } from 'mobx';
 
-import { SettingService } from '../../../modules/system-setting/settings.service';
-import { DataSourceService } from '../../../shared/services/data-source/data-source.service';
-import { MessageService } from '../../../shared/services/message';
+import { FeatureControlService } from '../../../core/services/feature-control/feature-control.service';
 import { StoreService } from '../../../shared/store/state.service';
-import { ProjectListComponent } from '../components/project-list/project-list.component';
+import { ProjectListService } from '../components/project-list/project-list.service';
 
 @Component({
   selector: 'eo-workspace-overview',
@@ -13,21 +14,28 @@ import { ProjectListComponent } from '../components/project-list/project-list.co
   styleUrls: ['./workspace-overview.component.scss']
 })
 export class WorkspaceOverviewComponent implements OnInit {
-  @ViewChild('eoProjectList') eoProjectList: ProjectListComponent;
   title = 'Workspaces';
   nzSelectedIndex = 0;
-  constructor(private dataSourceService: DataSourceService, private message: MessageService, public store: StoreService) {}
-  invite() {
-    this.nzSelectedIndex = 1;
+  isOwner = true;
+  constructor(
+    public projectList: ProjectListService,
+    public store: StoreService,
+    private router: Router,
+    public feature: FeatureControlService,
+    private message: MessageService
+  ) {}
+  async invite() {
+    if (this.nzSelectedIndex !== 1) {
+      this.router.navigate(['/home/workspace/overview/member']);
+    }
+    await waitNextTick();
+    this.message.send({ type: 'addWorkspaceMember', data: {} });
   }
   ngOnInit(): void {
-    autorun(() => {
+    autorun(async () => {
+      await waitNextTick();
       this.title = this.store.getCurrentWorkspace?.title;
-    });
-  }
-  createWorkspace() {
-    this.dataSourceService.checkRemoteCanOperate(() => {
-      this.message.send({ type: 'addWorkspace', data: {} });
+      this.isOwner = this.store?.getWorkspaceRole?.some(it => ['Workspace Owner'].includes(it.name));
     });
   }
 }

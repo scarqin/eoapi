@@ -1,104 +1,127 @@
 import { Injectable } from '@angular/core';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
+import { EoNgFeedbackMessageService } from 'eo-ng-feedback';
 import { WebService } from 'eo/workbench/browser/src/app/core/services';
 import { LanguageService } from 'eo/workbench/browser/src/app/core/services/language/language.service';
-import { ProjectApiService } from 'eo/workbench/browser/src/app/pages/workspace/project/api/api.service';
-import { MessageService } from 'eo/workbench/browser/src/app/shared/services/message';
-import { IndexedDBStorage } from 'eo/workbench/browser/src/app/shared/services/storage/IndexedDB/lib';
-import { StorageRes, StorageResStatus } from 'eo/workbench/browser/src/app/shared/services/storage/index.model';
-import { RemoteService } from 'eo/workbench/browser/src/app/shared/services/storage/remote.service';
-import { StorageService } from 'eo/workbench/browser/src/app/shared/services/storage/storage.service';
+import { ApiService } from 'eo/workbench/browser/src/app/shared/services/storage/api.service';
 import { StoreService } from 'eo/workbench/browser/src/app/shared/store/state.service';
 import { APP_CONFIG } from 'eo/workbench/browser/src/environments/environment';
-import { reaction, toJS } from 'mobx';
+import { autorun, reaction, toJS } from 'mobx';
+
+import { ApiStoreService } from '../../pages/workspace/project/api/service/store/api-state.service';
+import { waitNextTick } from '../../utils/index.utils';
+import { db } from '../services/storage/db';
 
 @Injectable({
   providedIn: 'root'
 })
 export class EffectService {
   constructor(
-    private apiService: ProjectApiService,
-    private storage: StorageService,
-    private indexedDBStorage: IndexedDBStorage,
     private store: StoreService,
-    private http: RemoteService,
-    private message: MessageService,
+    private api: ApiService,
     private router: Router,
     private lang: LanguageService,
-    private web: WebService
+    private web: WebService,
+    private apiStore: ApiStoreService,
+    private eMessage: EoNgFeedbackMessageService,
+    private route: ActivatedRoute
   ) {
-    this.updateWorkspaces();
     // * update title
-    document.title = `Postcat - ${this.store.getCurrentWorkspace.title}`;
-    this.updateProjects(this.store.getCurrentWorkspaceID).then(() => {
-      if (this.store.getProjectList.length === 0) {
-        this.router.navigate(['/home/workspace/overview']);
+    document.title = this.store.getCurrentWorkspace?.title ? `Postcat - ${this.store.getCurrentWorkspace?.title}` : 'Postcat';
+    if (this.store.isShare) return;
+    this.init();
+  }
+  async init() {
+    const result = await db.workspace.read();
+    result.data.title = $localize`Personal Workspace`;
+    this.store.setLocalWorkspace(result.data as API.Workspace);
+    const isUserFirstUse = !this.store.getCurrentWorkspaceUuid;
+
+    //User first use postcat,select localwork space
+    if (isUserFirstUse) {
+      this.pureSwitchWorkspace(this.store.getLocalWorkspace.workSpaceUuid);
+    }
+    //TODO perf
+    const initWorkspaceInfo = async () => {
+      if (!this.store.isLogin) {
+        this.store.setWorkspaceList([]);
+        if (this.store.isLocal) {
+          return;
+        }
+        this.switchWorkspace(this.store.getLocalWorkspace.workSpaceUuid);
+        return;
       }
-      this.getProjectPermission();
-      this.getWorkspacePermission();
-    });
+
+      //* Get workspace list
+      await this.updateWorkspaceList();
+      this.fixedID();
+
+      await this.updateWorkspacePermission();
+
+      // * Fetch role list
+      const roleList = await this.getRoleList();
+      this.store.setRoleList(
+        roleList.filter(val => val.module === 1),
+        'workspace'
+      );
+      this.store.setRoleList(
+        roleList.filter(val => val.module === 2),
+        'project'
+      );
+    };
+    initWorkspaceInfo();
     reaction(
       () => this.store.isLogin,
       async () => {
-        if (this.store.isLogin) {
-          await this.updateWorkspaces();
-        } else {
-          if (this.store.isLocal) {
-            this.store.setWorkspaceList([]);
-          } else {
-            this.changeWorkspace(this.store.getLocalWorkspace.id);
-          }
-        }
+        initWorkspaceInfo();
       }
     );
-  }
 
-  getGroups(projectID = 1): Promise<any[]> {
-    return new Promise((resolve, reject) => {
-      this.storage.run('groupLoadAllByProjectID', [projectID], (result: StorageRes) => {
-        if (result.status === StorageResStatus.success) {
-          resolve(result.data);
-        }
-      });
-    });
-  }
-
-  deleteEnv(uuid) {
-    this.storage.run('environmentRemove', [uuid], async (result: StorageRes) => {
-      if (result.status === StorageResStatus.success) {
-        const envList = this.store.getEnvList.filter(it => it.uuid !== uuid);
-        this.store.setEnvList(envList);
+    // * Init project
+    this.updateProjects(this.store.getCurrentWorkspaceUuid).then(async () => {
+      // Use first user postcat,auto into Default project
+      if (isUserFirstUse) {
+        //* Prevent 404
+        waitNextTick().then(() => {
+          this.switchProject(this.store.getProjectList[0].projectUuid);
+        });
+        return;
       }
-    });
-  }
-  async exportLocalProjectData(projectID = 1) {
-    return new Promise(resolve => {
-      this.indexedDBStorage.projectExport(projectID).subscribe((result: StorageRes) => {
-        if (result.status === StorageResStatus.success) {
-          resolve(result.data);
-        } else {
-          resolve(false);
-        }
-      });
-    });
-  }
+      if (this.store.getProjectList.length === 0) {
+        this.router.navigate(['/home/workspace/overview/projects']);
+      }
+      // * Fixed projectID
+      const { pid } = this.route.snapshot.queryParams;
+      if (!pid) return;
+      if (this.store.getCurrentProjectID !== pid) {
+        this.switchProject(pid);
+        return;
+      }
 
-  async exportProjectData(projectID = 1) {
-    const apiGroup = await this.getGroups(projectID);
-    const result: StorageRes = await this.apiService.getAll(projectID);
-    const { success, empty } = StorageResStatus;
-    if ([success, empty].includes(result.status)) {
-      return {
-        collections: this.exportCollects(apiGroup, result.data),
-        environments: []
-      };
+      // * update project role
+      await this.updateProjectPermission();
+    });
+  }
+  /**
+   * Fixed workspaceID and projectID
+   * Jump to the exist workspace and project
+   */
+  private fixedID() {
+    const { pid, wid } = this.route.snapshot.queryParams;
+    const isWorkspaceExist = this.store.getWorkspaceList.some(it => it.workSpaceUuid === wid);
+
+    if (this.store.getCurrentWorkspaceUuid === wid && isWorkspaceExist) return;
+
+    this.switchWorkspace(wid);
+    this.store.setCurrentProjectID(pid);
+  }
+  private async getRoleList() {
+    const [data, err] = await this.api.api_roleList({});
+    if (err) {
+      return;
     }
-    return {
-      collections: [],
-      environments: []
-    };
+    return data;
   }
-
   exportCollects(apiGroup: any[], apiData: any[], parentID = 0) {
     const apiGroupFilters = apiGroup.filter(child => child.parentID === parentID);
     const apiDataFilters = apiData.filter(child => child.groupID === parentID);
@@ -109,114 +132,127 @@ export class EffectService {
       }))
       .concat(apiDataFilters);
   }
-  async getWorkspacePermission() {
-    // TODO localworkspace no need to set permission
-    {
-      // * update workspace auth
-      const [data, err]: any = await this.http.api_workspacePermission({ workspaceID: this.store.getCurrentWorkspaceID });
-      if (err) {
-        return;
-      }
-      this.store.setPermission(data.permissions, 'workspace');
-      this.store.setRole(data.role.name, 'workspace');
-    }
-  }
-  async changeWorkspace(workspaceID: number = -1) {
-    // * real set workspace
-    this.store.setCurrentWorkspaceID(workspaceID);
-    // * real set workspace
-    await this.updateProjects(workspaceID);
-    await this.router.navigate(['**']);
-    // if (this.store.getProjectList.length === 1) {
-    this.router.navigate(['/home/workspace/overview']);
-    // } else {
-    //   // * refresh view
-    //   this.router.navigate(['/home/workspace/project/api'], { queryParams: { wid: this.store.getCurrentWorkspaceID } });
-    // }
+  async pureSwitchWorkspace(workspaceID: string) {
+    const workspace = this.store.getWorkspaceList.find(it => it.workSpaceUuid === workspaceID) || this.store.getLocalWorkspace;
+    this.store.setCurrentWorkspace(workspace);
     // * update title
-    document.title = `Postcat - ${this.store.getCurrentWorkspace.title}`;
+    document.title = this.store.getCurrentWorkspace?.title ? `Postcat - ${this.store.getCurrentWorkspace?.title}` : 'Postcat';
     // * update workspace role
-    this.getWorkspacePermission();
-    this.getProjectPermission();
+    await this.updateWorkspacePermission();
   }
-  async getProjectPermission() {
-    //TODO localworkspace no need to set permission
-    // * update project auth
-    const [data, err]: any = await this.http.api_projectPermission({ projectID: this.store.getCurrentProjectID });
+  async switchWorkspace(workspaceID: string) {
+    this.pureSwitchWorkspace(workspaceID);
+    // * real set workspace
+    await this.router.navigate(['**']);
+    this.router.navigate(['/home/workspace/overview/projects']);
+  }
+  async updateWorkspacePermission() {
+    // * local workspace no need to set permission
+    if (this.store.isLocal) {
+      return;
+    }
+    // * update workspace auth
+    const [data, err]: any = await this.api.api_workspaceRoles({});
     if (err) {
       return;
     }
-    this.store.setPermission(data.permissions, 'project');
-    this.store.setRole(data.role.name, 'project');
+    const { roles, permissions } = data;
+    this.store.setPermission(permissions, 'workspace');
+    this.store.setRole(roles, 'workspace');
+    return data;
   }
-  async changeProject(pid) {
+  async updateProjectPermission() {
+    // * localworkspace no need to set permission
+    if (this.store.isLocal) {
+      return;
+    }
+    // * update project auth
+    const [data, err]: any = await this.api.api_projectGetRole({});
+    if (err) {
+      return;
+    }
+    const { permissions, roles } = data.at(0);
+    this.store.setPermission(permissions, 'project');
+    this.store.setRole(roles, 'project');
+    return [data, err];
+  }
+
+  async switchProject(pid) {
     if (!pid) {
-      this.router.navigate(['/home/workspace/overview']);
+      this.router.navigate(['/home/workspace/overview/projects']);
       return;
     }
     this.store.setCurrentProjectID(pid);
+
+    //* update project info
+    this.apiStore.setGroupList([]);
+
+    //* jump to project
     await this.router.navigate(['**']);
     this.router.navigate(['/home/workspace/project/api'], { queryParams: { pid: this.store.getCurrentProjectID } });
+
     // * update project role
-    await this.getProjectPermission();
+    await this.updateProjectPermission();
   }
-  async updateWorkspaces() {
-    const [list, wErr]: any = await this.http.api_workspaceList({});
+  async updateWorkspaceList() {
+    const [list, wErr]: any = await this.api.api_workspaceList({});
     if (wErr) {
-      if (wErr.status === 401) {
-        this.message.send({ type: 'clear-user', data: {} });
-        if (this.store.isLogin) {
-          return;
-        }
-        this.message.send({ type: 'http-401', data: {} });
-      }
       // * Switch store to local workspace
       this.store.setWorkspaceList([]);
-      this.updateProjects(this.store.getCurrentWorkspaceID);
+      this.updateProjects(this.store.getCurrentWorkspaceUuid);
       return;
     }
     this.store.setWorkspaceList(list);
   }
-  async updateProjects(workspaceID) {
-    return new Promise(resolve => {
-      // * real set workspace
-      this.storage.run('projectBulkLoad', [workspaceID], async (result: StorageRes) => {
-        if (result.status === StorageResStatus.success) {
-          // * select first project automatic
-          this.store.setProjectList(result.data);
-          resolve([result.data, null]);
-          return;
-        }
-        resolve([null, result.data]);
-      });
-    });
+  async updateProjects(workSpaceUuid) {
+    const [data] = await this.api.api_projectList({ projectUuids: [], workSpaceUuid });
+    if (data) {
+      this.store.setProjectList(data.items);
+      return [data.items, null];
+    } else {
+      return [null, data];
+    }
   }
-  updateProject(data) {
-    const workspace = this.store.getCurrentWorkspace;
-    return new Promise(resolve => {
-      this.storage.run('projectUpdate', [workspace.id, data, data.uuid], async (result: StorageRes) => {
-        if (result.status === StorageResStatus.success) {
-          const project = result.data;
-          const projects = this.store.getProjectList;
-          projects.some(val => {
-            if (val.uuid === project.uuid) {
-              Object.assign(val, project);
-              return true;
-            }
-          });
-          this.store.setProjectList(projects);
-          this.store.setCurrentProjectID(project.uuid);
-          resolve(true);
-        }
-      });
+  async createProject(msg: any[] = []) {
+    const [data, err] = await this.api.api_projectCreate({
+      projectMsgs: [].concat(msg)
     });
+    if (err) {
+      this.eMessage.error($localize`Create Project Failed !`);
+      return [];
+    }
+    return data;
+  }
+  async updateProject(data) {
+    const [project, err] = await this.api.api_projectUpdate({ ...data, description: 'description' });
+    if (err) {
+      return;
+    }
+    const projects = this.store.getProjectList;
+    projects.some(val => {
+      if (val.projectUuid === project.projectUuid) {
+        Object.assign(val, project);
+        return true;
+      }
+    });
+    this.store.setProjectList(projects);
+    this.store.setCurrentProjectID(project.projectUuid);
   }
 
-  async updateShareLink(): Promise<string> {
-    // * update share link
-    const [res, err]: any = await this.http.api_shareCreateShare({});
+  async updateShareLink() {
+    //* Query share link
+    const [data, err]: any = await this.api.api_projectShareGetShareLink({});
     if (err) {
       return 'Error ... ';
+    }
+    const shareData = data || {};
+    if (!shareData.sharedUuid) {
+      // * Create share link
+      const [createData, err]: any = await this.api.api_projectShareCreateShare({});
+      if (err) {
+        return 'Error ... ';
+      }
+      Object.assign(shareData, createData);
     }
     const host = (this.store.remoteUrl || window.location.host)
       .replace(/:\/{2,}/g, ':::')
@@ -224,32 +260,6 @@ export class EffectService {
       .replace(/:{3}/g, '://')
       .replace(/(\/$)/, '');
     const lang = !APP_CONFIG.production && this.web.isWeb ? '' : this.lang.langHash;
-    return `${host}/${lang ? `${lang}/` : ''}home/share/http/test?shareId=${res.uniqueID}`;
-  }
-
-  updateEnvList() {
-    return new Promise(resolve => {
-      if (this.store.isShare) {
-        this.http
-          .api_shareDocGetEnv({
-            uniqueID: this.store.getShareID
-          })
-          .then(([data, err]) => {
-            if (err) {
-              return resolve([]);
-            }
-            this.store.setEnvList(data);
-            return resolve(data || []);
-          });
-        return;
-      }
-      this.storage.run('environmentLoadAllByProjectID', [this.store.getCurrentProjectID], (result: StorageRes) => {
-        if (result.status === StorageResStatus.success) {
-          this.store.setEnvList(result.data || []);
-          return resolve(result.data || []);
-        }
-        return resolve([]);
-      });
-    });
+    return `${host}/${lang ? `${lang}/` : ''}share/http/test?shareId=${shareData.sharedUuid}`;
   }
 }

@@ -2,14 +2,12 @@ import { Component, Input, Output, EventEmitter, OnChanges, AfterViewInit, OnDes
 import { EoNgFeedbackMessageService } from 'eo-ng-feedback';
 import { ElectronService } from 'eo/workbench/browser/src/app/core/services/electron/electron.service';
 import type { editor, IDisposable } from 'monaco-editor';
-import type MonacoEditor from 'monaco-editor';
 import type { JoinedEditorOptions } from 'ng-zorro-antd/code-editor';
 
-import { ThemeService } from '../../../core/services/theme.service';
+import { ThemeService } from '../../../core/services/theme/theme.service';
 import { debounce, whatTextType } from '../../../utils/index.utils';
 import { getDefaultCompletions } from './defaultCompletions';
 
-declare const monaco: typeof MonacoEditor;
 type EventType = 'format' | 'copy' | 'search' | 'replace' | 'type' | 'download' | 'newTab';
 const eventHash = new Map()
   .set('format', {
@@ -37,12 +35,6 @@ const eventHash = new Map()
 export class EoMonacoEditorComponent implements AfterViewInit, OnInit, OnChanges, OnDestroy {
   @Input() eventList: EventType[] = [];
   @Input() hiddenList: string[] = [];
-  @Input() set isBase64(val) {
-    this.$$isBase64 = val;
-    if (val) {
-      this.setCode(window.atob(this.$$code));
-    }
-  }
   @Input() set code(val) {
     this.setCode(val);
   }
@@ -56,7 +48,6 @@ export class EoMonacoEditorComponent implements AfterViewInit, OnInit, OnChanges
   @Input() completions = [];
   @Output() readonly codeChange = new EventEmitter<string>();
   $$code = '';
-  $$isBase64 = false;
   isFirstFormat = true;
   codeEdtor: editor.IStandaloneCodeEditor;
   completionItemProvider: IDisposable;
@@ -79,6 +70,7 @@ export class EoMonacoEditorComponent implements AfterViewInit, OnInit, OnChanges
       label: 'Text'
     }
   ];
+  tempConfig: JoinedEditorOptions = {};
   defaultConfig: JoinedEditorOptions = {
     language: this.editorType || 'json',
     // automaticLayout: true,
@@ -100,7 +92,7 @@ export class EoMonacoEditorComponent implements AfterViewInit, OnInit, OnChanges
   private resizeObserver: ResizeObserver;
   private readonly el: HTMLElement; /** monaco config */
   get editorOption(): JoinedEditorOptions {
-    return { ...this.defaultConfig, ...this.config };
+    return { ...this.defaultConfig, ...this.config, ...this.tempConfig };
   }
 
   isNaN(val) {
@@ -138,12 +130,17 @@ export class EoMonacoEditorComponent implements AfterViewInit, OnInit, OnChanges
     // * update root type
     if (this.eventList.includes('type') && !this.hiddenList.includes('type')) {
       requestAnimationFrame(() => {
+        if (!this.codeEdtor) {
+          this.ngOnChanges();
+          return;
+        }
+
         if (this.autoType) {
           const type = whatTextType(this.$$code || '');
           this.editorType = type;
-          window.monaco?.editor.setModelLanguage(this.codeEdtor.getModel(), type);
+          monaco?.editor.setModelLanguage(this.codeEdtor.getModel(), type);
         } else {
-          window.monaco?.editor.setModelLanguage(this.codeEdtor.getModel(), this.editorType);
+          monaco?.editor.setModelLanguage(this.codeEdtor.getModel(), this.editorType);
         }
       });
     }
@@ -183,9 +180,7 @@ export class EoMonacoEditorComponent implements AfterViewInit, OnInit, OnChanges
 
     let code = val;
     try {
-      if (this.$$isBase64) {
-        code = window.atob(val);
-      } else if (typeof val === 'object') {
+      if (typeof val === 'object') {
         code = JSON.stringify(val);
       } else {
         // code = JSON.stringify(typeof val === 'string' ? JSON.parse(val) : val);
@@ -204,16 +199,8 @@ export class EoMonacoEditorComponent implements AfterViewInit, OnInit, OnChanges
 
   private initMonacoEditorEvent() {
     if (this.completions?.length) {
-      this.completionItemProvider = window.monaco.languages.registerCompletionItemProvider('javascript', {
+      this.completionItemProvider = monaco.languages.registerCompletionItemProvider('javascript', {
         provideCompletionItems: (model, position) => {
-          // find out if we are completing a property in the 'dependencies' object.
-          const textUntilPosition = model.getValueInRange({
-            startLineNumber: 1,
-            startColumn: 1,
-            endLineNumber: position.lineNumber,
-            endColumn: position.column
-          });
-
           const word = model.getWordUntilPosition(position);
           const range = {
             startLineNumber: position.lineNumber,
@@ -228,11 +215,6 @@ export class EoMonacoEditorComponent implements AfterViewInit, OnInit, OnChanges
       });
     }
 
-    this.codeEdtor.onDidChangeModelDecorations(() => {
-      updateEditorHeight(); // typing
-      requestAnimationFrame(updateEditorHeight); // folding
-    });
-
     this.codeEdtor.onDidChangeModelContent(e => {
       this.handleChange();
     });
@@ -240,52 +222,49 @@ export class EoMonacoEditorComponent implements AfterViewInit, OnInit, OnChanges
     this.codeEdtor.onDidBlurEditorText(e => {
       this.handleBlur();
     });
-
-    let prevHeight = 0;
-
-    const updateEditorHeight = () => {
-      if (this.maxLine) {
-        const editorElement = this.codeEdtor.getDomNode();
-
-        if (!editorElement) {
-          return;
-        }
-
-        const lineHeight = this.codeEdtor.getOption(monaco.editor.EditorOption.lineHeight);
-        const lineCount = this.codeEdtor.getModel()?.getLineCount() || 1;
-        const height = this.codeEdtor.getTopForLineNumber(Math.min(lineCount, this.maxLine)) + lineHeight;
-
-        if (prevHeight !== height) {
-          prevHeight = height;
-          editorElement.style.height = `${height}px`;
-          this.codeEdtor.layout();
-        }
-      }
-    };
   }
   log(event, txt) {
     console.log('ace event', event, txt);
   }
   handleBlur() {
-    Promise.resolve().then(() => {
+    queueMicrotask(() => {
       this.codeChange.emit(this.$$code);
     });
   }
   handleChange() {
-    Promise.resolve().then(() => {
+    queueMicrotask(() => {
       this.codeChange.emit(this.$$code);
     });
   }
   rerenderEditor = () => {
     this.codeEdtor?.layout?.();
   };
+  updateReadOnlyCode(callback, originReadOnly = this.config.readOnly) {
+    // this.codeEdtor.updateOptions({ readOnly: false });
+    this.tempConfig.readOnly = false;
+    requestAnimationFrame(async () => {
+      const isReadOnly = this.codeEdtor.getOption(monaco.editor.EditorOption.readOnly);
+      if (isReadOnly === false) {
+        await callback();
+        requestAnimationFrame(() => {
+          this.tempConfig.readOnly = originReadOnly;
+        });
+      } else {
+        this.updateReadOnlyCode(callback, originReadOnly);
+      }
+    });
+  }
   formatCode() {
     return new Promise<string>(resolve => {
       requestAnimationFrame(async () => {
-        this.codeEdtor?.updateOptions({ readOnly: false });
-        await this.codeEdtor?.getAction('editor.action.formatDocument')?.run();
-        this.codeEdtor?.updateOptions({ readOnly: this.config.readOnly });
-        resolve(this.codeEdtor?.getValue() || '');
+        if (this.codeEdtor) {
+          this.updateReadOnlyCode(async () => {
+            await this.codeEdtor.getAction('editor.action.formatDocument').run();
+            resolve(this.codeEdtor.getValue() || '');
+          }, this.config.readOnly);
+        } else {
+          resolve(await this.formatCode());
+        }
       });
     });
   }
@@ -296,7 +275,7 @@ export class EoMonacoEditorComponent implements AfterViewInit, OnInit, OnChanges
         // const value = session.getValue();
         // const code = this.formatCode();
         // session.setValue(code);
-        this.formatCode(); //自动格式化代码
+        await this.formatCode(); //自动格式化代码
         break;
       }
       case 'copy': {

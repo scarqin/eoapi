@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import Dexie, { Table } from 'dexie';
+import { uniqueSlash } from 'eo/workbench/browser/src/app/pages/workspace/project/api/utils/api.utils';
 import { StoreService } from 'eo/workbench/browser/src/app/shared/store/state.service';
-import { uniqueSlash } from 'eo/workbench/browser/src/app/utils/api';
 import { tree2obj } from 'eo/workbench/browser/src/app/utils/tree/tree.utils';
 import { firstValueFrom, Observable } from 'rxjs';
 
@@ -32,7 +32,7 @@ export type ResultType<T = any> = {
 @Injectable({
   providedIn: 'root'
 })
-export class IndexedDBStorage extends Dexie implements StorageInterface {
+export class IndexedDBStorage {
   project!: Table<Project, number | string>;
   group!: Table<Group, number | string>;
   environment!: Table<Environment, number | string>;
@@ -41,17 +41,17 @@ export class IndexedDBStorage extends Dexie implements StorageInterface {
   mock!: Table<ApiMockEntity, number | string>;
 
   constructor(private store: StoreService) {
-    super('postcat_core');
-    this.version(2).stores({
-      project: '++uuid, name',
-      environment: '++uuid, name, projectID',
-      group: '++uuid, name, projectID, parentID',
-      apiData: '++uuid, name, projectID, groupID',
-      apiTestHistory: '++uuid, projectID, apiDataID',
-      mock: '++uuid, name, apiDataID, projectID, createWay'
-    });
-    this.open();
-    this.on('populate', () => this.populate());
+    // super('postcat_core');
+    // this.version(2).stores({
+    //   project: '++uuid, name',
+    //   environment: '++uuid, name, projectID',
+    //   group: '++uuid, name, projectID, parentID',
+    //   apiData: '++uuid, name, projectID, groupID',
+    //   apiTestHistory: '++uuid, projectID, apiDataID',
+    //   mock: '++uuid, name, apiDataID, projectID, createWay'
+    // });
+    // this.open();
+    // this.on('populate', () => this.populate());
   }
   private getApiUrl(apiData: ApiData) {
     /** get mock url */
@@ -78,7 +78,7 @@ export class IndexedDBStorage extends Dexie implements StorageInterface {
     const apiData = sampleApiData.map((n, i) =>
       this.createMockObj(n, { name: $localize`Default Mock`, createWay: 'system', apiDataID: apiDataKeys.at(i) })
     );
-    this.mock.bulkAdd(apiData);
+    await this.mock.bulkAdd(apiData);
   }
 
   private resProxy(data, error?, status?: StorageResStatus): ResultType {
@@ -363,7 +363,7 @@ export class IndexedDBStorage extends Dexie implements StorageInterface {
     result.subscribe(async ({ status, data }: ResultType<ApiData>) => {
       if (status === 200 && data) {
         await this.mock.add(
-          this.createMockObj(data, { name: '默认 Mock', createWay: 'system', projectID: this.store.getCurrentProjectID })
+          this.createMockObj(data, { name: '默认 Mock', createWay: 'system', projectUuid: this.store.getCurrentProjectID })
         );
       }
     });

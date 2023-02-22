@@ -1,11 +1,11 @@
 import { Component, Input, OnInit, OnChanges, ViewChild } from '@angular/core';
 import { SafeUrl } from '@angular/platform-browser';
 import { EoMonacoEditorComponent } from 'eo/workbench/browser/src/app/modules/eo-ui/monaco-editor/monaco-editor.component';
-import { getBlobUrl } from 'eo/workbench/browser/src/app/utils/index.utils';
+import { b64DecodeUnicode, decodeUnicode, getBlobUrl } from 'eo/workbench/browser/src/app/utils/index.utils';
 import { NzContextMenuService, NzDropdownMenuComponent } from 'ng-zorro-antd/dropdown';
 
-import { ApiTestUtilService } from '../../../../../../../modules/api-shared/api-test-util.service';
-import { ApiTestHistoryResponse } from '../api-test.model';
+import { ApiTestUtilService } from '../../../service/api-test-util.service';
+import { ApiTestResData } from '../../../service/test-server/test-server.model';
 
 @Component({
   selector: 'eo-api-test-result-response',
@@ -13,12 +13,13 @@ import { ApiTestHistoryResponse } from '../api-test.model';
   styleUrls: ['./api-test-result-response.component.scss']
 })
 export class ApiTestResultResponseComponent implements OnChanges {
-  @Input() model: ApiTestHistoryResponse;
+  @Input() model: ApiTestResData;
   @Input() uri: string;
   @ViewChild(EoMonacoEditorComponent, { static: false }) eoEditor?: EoMonacoEditorComponent;
   codeStatus: { status: string; cap: number; class: string };
   size: string;
   blobUrl = '';
+  responseBody = '';
   get responseIsImg() {
     return this.model.contentType?.startsWith('image');
   }
@@ -28,11 +29,20 @@ export class ApiTestResultResponseComponent implements OnChanges {
   ngOnChanges(changes) {
     if (changes.model && this.model) {
       this.codeStatus = this.apiTest.getHTTPStatus(this.model?.statusCode);
+      this.responseBody = this.decodeBody(changes.model.currentValue.body || '');
       if (!this.responseIsImg) {
         this.eoEditor?.formatCode();
       } else if (this.responseIsImg) {
         this.imgBlobUrl = this.uri;
       }
+    }
+  }
+
+  decodeBody(body: string) {
+    if (['longText', 'stream'].includes(this.model.responseType)) {
+      return decodeUnicode(b64DecodeUnicode(body));
+    } else {
+      return decodeUnicode(body);
     }
   }
 
@@ -44,7 +54,7 @@ export class ApiTestResultResponseComponent implements OnChanges {
     let code = this.model.body;
     try {
       if (['longText', 'stream'].includes(this.model.responseType)) {
-        code = window.atob(code);
+        code = b64DecodeUnicode(code);
       } else {
         code = JSON.stringify(typeof code === 'string' ? JSON.parse(code) : code, null, 4);
       }

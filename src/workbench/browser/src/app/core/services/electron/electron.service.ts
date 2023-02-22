@@ -2,8 +2,9 @@ import { Injectable } from '@angular/core';
 // If you import a module but never use any of the imported values other than as TypeScript types,
 // the resulting javascript file will look as if you never imported the module at all.
 import { getSettings } from 'eo/workbench/browser/src/app/modules/system-setting/settings.service';
+import { TraceService } from 'eo/workbench/browser/src/app/shared/services/trace.service';
 import { getBrowserType } from 'eo/workbench/browser/src/app/utils/browser-type';
-import StorageUtil from 'eo/workbench/browser/src/app/utils/storage/Storage';
+import StorageUtil from 'eo/workbench/browser/src/app/utils/storage/storage.utils';
 
 import pkg from '../../../../../../../../package.json';
 import { StoreService } from '../../../shared/store/state.service';
@@ -18,7 +19,7 @@ type DescriptionsItem = {
 })
 export class ElectronService {
   ipcRenderer;
-  constructor(private store: StoreService) {
+  constructor(private store: StoreService, private trace: TraceService) {
     // Conditional imports
     if (this.isElectron) {
       // Notes :
@@ -33,10 +34,11 @@ export class ElectronService {
       // https://www.electronjs.org/docs/latest/api/ipc-renderer#ipcrendererinvokechannel-args
       this.ipcRenderer = window.electron.ipcRenderer;
     }
+    this.trace.setUser({ client_type: this.isElectron ? 'client' : 'web' });
   }
 
   get isElectron(): boolean {
-    return !!window?.electron;
+    return !!window.electron;
   }
   getSystemInfo(): DescriptionsItem[] {
     const descriptions: DescriptionsItem[] = [

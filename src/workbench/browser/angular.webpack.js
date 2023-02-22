@@ -22,22 +22,40 @@ module.exports = (config, options) => {
   config.plugins = [
     ...config.plugins,
     new NodePolyfillPlugin({
-      excludeAliases: ['console'],
+      excludeAliases: ['console']
     })
   ];
   config.module.rules = [
+    // {
+    //   test: /\.(js|ts)$/,
+    //   use: [
+    //     {
+    //       loader: 'babel-loader',
+    //       options: {
+    //         presets: ['@babel/preset-env', 'stage-3'],
+    //         plugins: ['@babel/plugin-syntax-import-assertions']
+    //       }
+    //     }
+    //   ],
+    //   exclude: /node_modules/,
+    //   resourceQuery: { not: [/\?ngResource/] }
+    // },
     {
       test: /\.css$/,
       use: ['style-loader', 'css-loader'],
-      resourceQuery: { not: [/\?ngResource/] },
+      resourceQuery: { not: [/\?ngResource/] }
     },
     {
       test: /\.ttf$/,
       type: 'asset/resource',
-      resourceQuery: { not: [/\?ngResource/] },
+      resourceQuery: { not: [/\?ngResource/] }
     },
-    ...config.module.rules,
+    ...config.module.rules
   ];
+
+  config.experiments = {
+    topLevelAwait: true
+  };
 
   // console.log('config', config.module.rules);
 

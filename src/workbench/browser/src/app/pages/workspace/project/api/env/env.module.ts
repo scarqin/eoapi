@@ -1,7 +1,6 @@
-import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { EoNgTreeModule } from 'eo-ng-tree';
 import { SharedModule } from 'eo/workbench/browser/src/app/shared/shared.module';
 import { NzEmptyModule } from 'ng-zorro-antd/empty';
 
@@ -21,9 +20,8 @@ const COMPONENTA = [EnvListComponent, EnvSelectComponent];
         component: EnvEditComponent
       }
     ]),
+    EoNgTreeModule,
     NzEmptyModule,
-    FormsModule,
-    CommonModule,
     SharedModule,
     ...ANTDMODULES
   ],
